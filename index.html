@@ -1,0 +1,405 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --wb:#f2ebe3;--wb2:#e8ddd2;--wb3:#d9cbbf;--wb4:#b89f8a;--wb5:#8a6650;--wb6:#5c3a28;--wb7:#3a1f10;
+  --wt:#3a1f10;--wt2:#5c3a28;--wt3:#8a6650;
+  --sel:#7a3a1a;--sel-bg:#f0ddd0;
+  --drop-bg:#c8e6cc;--drop-bg2:#e8f5e9;--drop-b:#3a7d44;
+  --hole:#c4a898;--hole2:#8a6650;
+  --bad-bg:#fde8e8;--bad-b:#c0392b;
+}
+#app{padding:1.5rem 0;min-height:600px;font-family:var(--font-sans);font-size:14px;color:var(--wt)}
+.wrap{background:var(--wb);border:1.5px solid var(--wb4);border-radius:10px;padding:14px;position:relative}
+.toolbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px;background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;margin-bottom:10px}
+.tb-sep{width:1px;height:18px;background:var(--wb4);margin:0 3px;flex-shrink:0}
+.tb-btn{padding:4px 10px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:13px;line-height:1.4;user-select:none;font-family:inherit;position:relative}
+.tb-btn:hover{background:var(--wb3)}
+.sz-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:13px;color:var(--wt2)}
+.sz-btn{padding:1px 9px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:14px;line-height:1.6;font-family:inherit;position:relative}
+.sz-btn:hover{background:var(--wb3)}
+.sw-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--wt2)}
+.sw-wrap.ml{margin-left:auto}
+.sw-track{width:32px;height:17px;border-radius:9px;background:var(--wb4);position:relative;cursor:pointer;transition:background .15s;flex-shrink:0;border:1px solid var(--wb5)}
+.sw-track.on{background:var(--wb6)}
+.sw-thumb{position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--wb);transition:left .15s}
+.sw-track.on .sw-thumb{left:17px}
+
+.tbl-zone{position:relative;margin:0 -44px;padding:0 44px}
+.tbl-zone-inner{position:relative;padding:44px 0;margin:-44px 0}
+
+table{border-collapse:collapse;width:100%;min-width:300px;table-layout:fixed}
+td{border:1px solid var(--wb4);padding:0;position:relative;vertical-align:top;background:var(--wb)}
+td.hdr{background:var(--wb3)}
+.ci{padding:6px 26px 6px 8px;min-height:32px;outline:none;cursor:text;word-break:break-word;white-space:pre-wrap;color:var(--wt)}
+.ci:focus{background:color-mix(in srgb,var(--sel-bg) 55%,var(--wb))}
+td.hdr .ci:focus{background:color-mix(in srgb,var(--sel-bg) 45%,var(--wb3))}
+td.sel{outline:2px solid var(--sel);outline-offset:-2px;z-index:1}
+td.sel .ci{background:var(--sel-bg)}
+td.hdr.sel .ci{background:color-mix(in srgb,var(--sel-bg) 65%,var(--wb3))}
+td.drag-src{outline:2px dashed var(--hole2);outline-offset:-2px}
+td.drag-src .ci{background:var(--hole);color:transparent;user-select:none}
+td.drop-primary{outline:2px solid var(--drop-b);outline-offset:-2px}
+td.drop-primary .ci{background:var(--drop-bg)}
+td.drop-secondary .ci{background:var(--drop-bg2)}
+td.drop-secondary{outline:1px solid var(--drop-b);outline-offset:-1px}
+.handle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:14px;height:20px;display:none;flex-direction:column;justify-content:center;align-items:center;gap:3px;cursor:grab;z-index:3;opacity:0.5}
+.handle:hover{opacity:1}
+.handle span{display:block;width:8px;height:1.5px;background:var(--wt2);border-radius:1px}
+td:hover .handle{display:flex}
+.ghost-grid{position:absolute;pointer-events:none;z-index:9999;display:grid;gap:2px;transform:rotate(1.5deg) scale(1.04);opacity:0.95;box-shadow:0 8px 20px rgba(58,31,16,0.18)}
+.ghost-cell{border-radius:5px;background:var(--wb);border:1.5px solid var(--sel);padding:5px 8px;font-size:13px;color:var(--wt);white-space:pre-wrap;word-break:break-word;min-height:28px;overflow:hidden}
+.ghost-grid.bad .ghost-cell{border-color:var(--bad-b);background:var(--bad-bg);color:#7a1010}
+@keyframes flyTo{from{transform:var(--fly-from)}to{transform:translate(0,0)}}
+.ci-flying{animation:flyTo 220ms cubic-bezier(.22,.8,.45,1) forwards}
+
+.ec-group{position:absolute;display:none;z-index:30}
+.ec-group.show{display:flex}
+.ec-group.col-grp{flex-direction:row;gap:3px;align-items:center}
+.ec-group.row-grp{flex-direction:column;gap:3px;align-items:center}
+.ec-btn{width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;line-height:1;user-select:none;position:relative;color:#fff;flex-shrink:0}
+.ec-btn.add{background:var(--wb6)}
+.ec-btn.add:hover{background:var(--wb7)}
+.ec-btn.del{background:#8a3020}
+.ec-btn.del:hover{background:#6b2010}
+
+.tip{position:absolute;background:var(--wb7);color:var(--wb);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;transition:opacity .1s;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%)}
+.ec-btn:hover .tip,.tb-btn:hover .tip,.sz-btn:hover .tip,.sw-track:hover .tip{opacity:1;transition-delay:.6s}
+.ec-btn .tip{bottom:calc(100%+5px)}
+.row-grp .ec-btn .tip{bottom:auto;top:calc(100% + 5px);left:calc(100% + 5px);transform:none}
+
+.toast{position:absolute;bottom:-32px;left:50%;transform:translateX(-50%);background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--wt);opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;z-index:100}
+.toast.show{opacity:1}
+</style>
+
+<h2 class="sr-only">Table builder</h2>
+<div id="app"><div class="wrap">
+  <div class="sz-row">
+    <span>Rows</span>
+    <button class="sz-btn" onclick="chgSize('r',-1)">−<span class="tip">Remove a row</span></button>
+    <span id="rn">4</span>
+    <button class="sz-btn" onclick="chgSize('r',1)">+<span class="tip">Add a row</span></button>
+    <span style="margin-left:8px">Cols</span>
+    <button class="sz-btn" onclick="chgSize('c',-1)">−<span class="tip">Remove a column</span></button>
+    <span id="cn">4</span>
+    <button class="sz-btn" onclick="chgSize('c',1)">+<span class="tip">Add a column</span></button>
+  </div>
+  <div class="toolbar">
+    <button class="tb-btn" onclick="applyFmt('bold')"><b>B</b><span class="tip">Bold</span></button>
+    <button class="tb-btn" onclick="applyFmt('italic')"><i>I</i><span class="tip">Italic</span></button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="applyAlign('left')">&#8676;<span class="tip">Align left</span></button>
+    <button class="tb-btn" onclick="applyAlign('center')">&#8596;<span class="tip">Align center</span></button>
+    <button class="tb-btn" onclick="applyAlign('right')">&#8677;<span class="tip">Align right</span></button>
+    <div class="tb-sep"></div>
+    <div class="sw-wrap" style="position:relative">
+      <span>Header</span>
+      <div class="sw-track on" id="sw-hdr" onclick="togHdr()"><div class="sw-thumb"></div><span class="tip">Toggle header row</span></div>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="doExport('csv')">CSV<span class="tip">Export as CSV</span></button>
+    <button class="tb-btn" onclick="doExport('md')">MD<span class="tip">Export as Markdown</span></button>
+    <button class="tb-btn" onclick="doExport('html')">HTML<span class="tip">Export as HTML</span></button>
+    <button class="tb-btn" onclick="doExport('tsv')">TSV<span class="tip">Export as TSV</span></button>
+    <button class="tb-btn" onclick="doExport('cells')">Copy cells<span class="tip">Copy as spreadsheet cells</span></button>
+    <div class="sw-wrap ml" style="position:relative">
+      <span>Download</span>
+      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy</span></div>
+      <span>Copy</span>
+    </div>
+  </div>
+
+  <div class="tbl-zone" id="tbl-zone">
+    <div class="tbl-zone-inner" id="tbl-inner">
+      <table id="tbl"></table>
+      <div class="ec-group col-grp" id="col-grp">
+        <button class="ec-btn add" onclick="addColAt(-1)">+<span class="tip" style="bottom:auto;top:calc(100% + 5px)">Add col left</span></button>
+        <button class="ec-btn del" onclick="delCol()">×<span class="tip" style="bottom:auto;top:calc(100% + 5px)">Delete col</span></button>
+        <button class="ec-btn add" onclick="addColAt(0)">+<span class="tip" style="bottom:auto;top:calc(100% + 5px)">Add col right</span></button>
+      </div>
+      <div class="ec-group row-grp" id="row-grp">
+        <button class="ec-btn add" onclick="addRowAt(-1)">+<span class="tip">Add row above</span></button>
+        <button class="ec-btn del" onclick="delRow()">×<span class="tip">Delete row</span></button>
+        <button class="ec-btn add" onclick="addRowAt(0)">+<span class="tip">Add row below</span></button>
+      </div>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+let NR=4,NC=4,hasHdr=true,copyMode=false;
+let sel=new Set(),lastSel=null;
+let dragActive=false,dragSelKeys=[],dragOriginData={};
+let dragGhostEl=null,dragTargetCell=null;
+let dragOffR=0,dragOffC=0;
+let isSelDrag=false,selDragStart=null;
+let hoverRow=-1,hoverCol=-1;
+
+const tbl=document.getElementById('tbl');
+const tblInner=document.getElementById('tbl-inner');
+const colGrp=document.getElementById('col-grp');
+const rowGrp=document.getElementById('row-grp');
+
+function gC(r,c){return tbl.rows[r]&&tbl.rows[r].cells[c]}
+function gI(r,c){const t=gC(r,c);return t?t.querySelector('.ci'):null}
+function cPos(td){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)if(tbl.rows[r].cells[c]===td)return[r,c];return null;}
+function key(r,c){return r+','+c}
+function pk(k){const p=k.split(',');return[+p[0],+p[1]]}
+
+function makeCell(r,c,data){
+  const cell=tbl.rows[r].cells[c];
+  if(r===0&&hasHdr)cell.classList.add('hdr');
+  const d=document.createElement('div');d.className='ci';d.contentEditable='true';
+  if(data){d.innerHTML=data.h||'';if(data.a)d.style.textAlign=data.a;if(data.fw)d.style.fontWeight=data.fw;if(data.fs)d.style.fontStyle=data.fs;}
+  const handle=document.createElement('div');handle.className='handle';
+  handle.innerHTML='<span></span><span></span><span></span>';
+  handle.addEventListener('mousedown',onHandleDown);
+  cell.appendChild(d);cell.appendChild(handle);
+  d.addEventListener('mousedown',onCIDown);
+  d.addEventListener('mouseover',onCIOver);
+  d.addEventListener('keydown',onCIKey);
+  d.addEventListener('copy',onCICopy);
+}
+
+function build(){
+  const prev=snap();tbl.innerHTML='';
+  for(let r=0;r<NR;r++){tbl.insertRow();for(let c=0;c<NC;c++){tbl.rows[r].insertCell();makeCell(r,c,prev[key(r,c)]);}}
+  document.getElementById('rn').textContent=NR;document.getElementById('cn').textContent=NC;
+  refreshSel();
+}
+
+function snap(){
+  const o={};
+  for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++){
+    const d=gI(r,c);if(d)o[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};
+  }
+  return o;
+}
+function applySnap(prev){Object.entries(prev).forEach(([k,v])=>{const[r,c]=pk(k);const d=gI(r,c);if(d){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}});}
+function chgSize(t,delta){const prev=snap();if(t==='r')NR=Math.max(1,NR+delta);else NC=Math.max(1,NC+delta);build();applySnap(prev);clearSel();}
+
+function clearSel(){sel.clear();lastSel=null;refreshSel();}
+function addSel(r,c){sel.add(key(r,c));lastSel=[r,c];}
+function refreshSel(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)gC(r,c).classList.toggle('sel',sel.has(key(r,c)));}
+function selRange(r1,c1,r2,c2){for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)sel.add(key(r,c));lastSel=[r2,c2];refreshSel();}
+
+function onCIDown(e){
+  if(e.target.closest('.handle'))return;
+  const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;const[r,c]=pos;
+  if(e.shiftKey&&lastSel){selRange(lastSel[0],lastSel[1],r,c);e.preventDefault();return;}
+  if(e.ctrlKey||e.metaKey){sel.has(key(r,c))?sel.delete(key(r,c)):addSel(r,c);refreshSel();e.preventDefault();return;}
+  clearSel();addSel(r,c);refreshSel();
+  isSelDrag=true;selDragStart=[r,c];
+  document.addEventListener('mouseup',()=>{isSelDrag=false;},{once:true});
+}
+function onCIOver(e){if(!isSelDrag||!selDragStart)return;const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;sel.clear();selRange(selDragStart[0],selDragStart[1],pos[0],pos[1]);}
+function onCIKey(e){
+  if((e.key==='Delete'||e.key==='Backspace')&&sel.size>=1&&!hasTxtSel()){e.preventDefault();sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)d.innerHTML='';});}
+  if((e.ctrlKey||e.metaKey)&&e.key==='c'&&sel.size>0){e.preventDefault();copySelection();}
+}
+function onCICopy(e){if(sel.size!==1)return;e.preventDefault();e.clipboardData.setData('text/plain',window.getSelection().toString());}
+function hasTxtSel(){return window.getSelection()&&window.getSelection().toString().length>0;}
+
+function copySelection(){
+  const arr=[];sel.forEach(k=>arr.push(pk(k)));
+  const minR=Math.min(...arr.map(p=>p[0])),maxR=Math.max(...arr.map(p=>p[0]));
+  const minC=Math.min(...arr.map(p=>p[1])),maxC=Math.max(...arr.map(p=>p[1]));
+  const rows=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const d=gI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}
+  const tsv=rows.map(r=>r.join('\t')).join('\n');
+  const htmlRows=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const d=gI(r,c);const tag=(r===0&&hasHdr&&minR===0)?'th':'td';row.push(`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`);}htmlRows.push('<tr>'+row.join('')+'</tr>');}
+  navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob(['<table>'+htmlRows.join('')+'</table>'],{type:'text/html'})})]).then(()=>toast('Copied')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
+}
+
+function csa(d){if(!d)return'';const p=[];if(d.style.textAlign)p.push('text-align:'+d.style.textAlign);if(d.style.fontWeight==='bold')p.push('font-weight:bold');if(d.style.fontStyle==='italic')p.push('font-style:italic');return p.length?' style="'+p.join(';')+'"':'';}
+function ciStyle(d){if(!d)return'';const p=[];if(d.style.fontWeight==='bold')p.push('font-weight:bold');if(d.style.fontStyle==='italic')p.push('font-style:italic');if(d.style.textAlign)p.push('text-align:'+d.style.textAlign);return p.join(';');}
+function getSelBounds(){const arr=[];sel.forEach(k=>arr.push(pk(k)));if(!arr.length)return null;return{minR:Math.min(...arr.map(p=>p[0])),maxR:Math.max(...arr.map(p=>p[0])),minC:Math.min(...arr.map(p=>p[1])),maxC:Math.max(...arr.map(p=>p[1]))};}
+
+function onHandleDown(e){
+  e.preventDefault();e.stopPropagation();
+  const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;
+  const[hr,hc]=pos;
+  if(!sel.has(key(hr,hc))){clearSel();addSel(hr,hc);refreshSel();}
+  const bounds=getSelBounds();
+  dragOffR=hr-bounds.minR;dragOffC=hc-bounds.minC;
+  dragSelKeys=[...sel];
+  dragOriginData={};dragSelKeys.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)dragOriginData[k]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};});
+  dragSelKeys.forEach(k=>{const[r,c]=pk(k);gC(r,c)?.classList.add('drag-src');});
+  dragActive=true;buildGhost(bounds,e);
+  document.addEventListener('mousemove',onDragMove);
+  document.addEventListener('mouseup',onDragUp,{once:true});
+}
+
+function buildGhost(bounds,e){
+  const rows=bounds.maxR-bounds.minR+1,cols=bounds.maxC-bounds.minC+1;
+  dragGhostEl=document.createElement('div');dragGhostEl.className='ghost-grid';
+  dragGhostEl.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  dragGhostEl.style.position='absolute';dragGhostEl.style.minWidth='60px';
+  for(let r=bounds.minR;r<=bounds.maxR;r++)for(let c=bounds.minC;c<=bounds.maxC;c++){
+    const gc=document.createElement('div');gc.className='ghost-cell';
+    const d=gI(r,c);if(d){gc.innerHTML=d.innerHTML;const s=ciStyle(d);if(s)gc.style.cssText+=';'+s;}
+    dragGhostEl.appendChild(gc);
+  }
+  const zR=tblInner.getBoundingClientRect();
+  const anchor=gC(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
+  const gw=anchor.width*(bounds.maxC-bounds.minC+1);
+  dragGhostEl.style.left=(e.clientX-zR.left-gw+anchor.width-10)+'px';
+  dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
+  tblInner.appendChild(dragGhostEl);
+}
+
+function getDropBounds(anchorCell){
+  const pos=cPos(anchorCell);if(!pos)return null;
+  const[ar,ac]=pos;const bounds=getSelBounds();
+  const rows=bounds.maxR-bounds.minR+1,cols=bounds.maxC-bounds.minC+1;
+  const destR=ar-dragOffR,destC=ac-dragOffC;
+  if(destR<0||destC<0||destR+rows>NR||destC+cols>NC)return null;
+  return{r:destR,c:destC,rows,cols,origBounds:bounds};
+}
+
+function clearDropHighlights(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++){gC(r,c).classList.remove('drop-primary','drop-secondary');}}
+function applyDropHighlights(db,targetCell){
+  for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++){
+    const cell=gC(r,c);if(!cell)continue;
+    cell.classList.add(cell===targetCell?'drop-primary':'drop-secondary');
+  }
+}
+
+function onDragMove(e){
+  if(!dragGhostEl)return;
+  const zR=tblInner.getBoundingClientRect();
+  const bounds=getSelBounds();
+  const anchor=gC(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
+  const gw=anchor.width*(bounds.maxC-bounds.minC+1);
+  dragGhostEl.style.left=(e.clientX-zR.left-gw+anchor.width-10)+'px';
+  dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const cell=el?el.closest('td'):null;
+  clearDropHighlights();dragTargetCell=null;
+  if(cell&&tbl.contains(cell)&&!cell.classList.contains('drag-src')){
+    dragTargetCell=cell;const db=getDropBounds(cell);
+    dragGhostEl.classList.toggle('bad',!db);
+    if(db)applyDropHighlights(db,cell);
+  } else dragGhostEl.classList.remove('bad');
+}
+
+function animSwap(fromRect,toCell){
+  const tRect=toCell.getBoundingClientRect();
+  const dx=fromRect.left-tRect.left,dy=fromRect.top-tRect.top;
+  const ci=toCell.querySelector('.ci');
+  ci.classList.remove('ci-flying');ci.style.setProperty('--fly-from',`translate(${dx}px,${dy}px)`);
+  void ci.offsetWidth;ci.classList.add('ci-flying');
+  ci.addEventListener('animationend',()=>ci.classList.remove('ci-flying'),{once:true});
+}
+
+function onDragUp(){
+  document.removeEventListener('mousemove',onDragMove);
+  if(dragGhostEl){dragGhostEl.remove();dragGhostEl=null;}
+  dragSelKeys.forEach(k=>{const[r,c]=pk(k);gC(r,c)?.classList.remove('drag-src');});
+  clearDropHighlights();
+  const db=dragTargetCell?getDropBounds(dragTargetCell):null;
+  if(db){
+    const bounds=getSelBounds();
+    const srcCells=[];for(let r=bounds.minR;r<=bounds.maxR;r++)for(let c=bounds.minC;c<=bounds.maxC;c++)srcCells.push([r,c]);
+    const dstCells=[];for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++)dstCells.push([r,c]);
+    const srcSnap={};srcCells.forEach(([r,c])=>{const d=gI(r,c);if(d)srcSnap[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};});
+    const dstSnap={};dstCells.forEach(([r,c])=>{if(!srcSnap[key(r,c)]){const d=gI(r,c);if(d)dstSnap[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};}});
+    const srcRects={};srcCells.forEach(([r,c])=>{const cell=gC(r,c);if(cell)srcRects[key(r,c)]=cell.getBoundingClientRect();});
+    const dstRects={};dstCells.forEach(([r,c])=>{const cell=gC(r,c);if(cell)dstRects[key(r,c)]=cell.getBoundingClientRect();});
+    srcCells.forEach(([sr,sc],i)=>{
+      const[dr,dc]=dstCells[i];const d=gI(dr,dc);const src=srcSnap[key(sr,sc)];if(!d||!src)return;
+      animSwap(srcRects[key(sr,sc)],gC(dr,dc));
+      d.innerHTML=src.h;d.style.textAlign=src.a||'';d.style.fontWeight=src.fw||'';d.style.fontStyle=src.fs||'';
+    });
+    const displaced=dstCells.filter(([r,c])=>!srcSnap[key(r,c)]);
+    displaced.forEach(([dr,dc])=>{
+      const data=dstSnap[key(dr,dc)];if(!data)return;
+      const idx=dstCells.findIndex(([r,c])=>r===dr&&c===dc);
+      const[sr,sc]=srcCells[idx];const d=gI(sr,sc);
+      if(d){animSwap(dstRects[key(dr,dc)],gC(sr,sc));d.innerHTML=data.h;d.style.textAlign=data.a||'';d.style.fontWeight=data.fw||'';d.style.fontStyle=data.fs||'';}
+    });
+    const newSel=new Set();dstCells.forEach(([r,c])=>newSel.add(key(r,c)));
+    sel=newSel;lastSel=[db.r+db.rows-1,db.c+db.cols-1];refreshSel();
+  }
+  dragActive=false;dragSelKeys=[];dragOriginData={};dragTargetCell=null;
+}
+
+function applyFmt(cmd){
+  if(sel.size>=1&&!hasTxtSel()){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});}
+  else document.execCommand(cmd);
+}
+function applyAlign(a){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)d.style.textAlign=a;});}
+function togHdr(){hasHdr=!hasHdr;for(let c=0;c<NC;c++){const cell=gC(0,c);if(cell)cell.classList.toggle('hdr',hasHdr);}document.getElementById('sw-hdr').classList.toggle('on',hasHdr);}
+function togMode(){copyMode=!copyMode;document.getElementById('sw-mode').classList.toggle('on',copyMode);}
+
+function getRows(){const rows=[];for(let r=0;r<tbl.rows.length;r++){const row=[];for(let c=0;c<tbl.rows[r].cells.length;c++){const d=gI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}return rows;}
+function escCSV(v){return/[,"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function colAlign(c){if(!hasHdr)return'';const d=gI(0,c);return d?d.style.textAlign:'';}
+function mdAlignRow(w){return'| '+w.map((n,c)=>{const a=colAlign(c);if(a==='center')return':'+'-'.repeat(Math.max(1,n-2))+':';if(a==='right')return'-'.repeat(Math.max(1,n-1))+':';return'-'.repeat(n);}).join(' | ')+' |';}
+function buildMD(){const d=getRows();if(!d.length)return'';const w=d[0].map((_,c)=>Math.max(...d.map(r=>(r[c]||'').length),3));const lines=d.map(r=>'| '+r.map((v,c2)=>v.padEnd(w[c2])).join(' | ')+' |');lines.splice(1,0,mdAlignRow(w));return lines.join('\n');}
+function buildHTML(){let h='<table>\n';for(let r=0;r<tbl.rows.length;r++){h+='  <tr>';for(let c=0;c<tbl.rows[r].cells.length;c++){const d=gI(r,c);const tag=(r===0&&hasHdr)?'th':'td';h+=`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`;}h+='</tr>\n';}return h+'</table>';}
+
+function doExport(type){
+  const d=getRows();let content='',filename='',mime='text/plain';
+  if(type==='csv'){content=d.map(r=>r.map(escCSV).join(',')).join('\n');filename='table.csv';mime='text/csv';}
+  else if(type==='md'){content=buildMD();filename='table.md';}
+  else if(type==='html'){content=buildHTML();filename='table.html';mime='text/html';}
+  else if(type==='tsv'){content=d.map(r=>r.join('\t')).join('\n');filename='table.tsv';}
+  else if(type==='cells'){
+    const tsv=d.map(r=>r.join('\t')).join('\n');
+    const htmlOut='<table>'+d.map((r,ri)=>'<tr>'+r.map((v,ci2)=>{const tag=(ri===0&&hasHdr)?'th':'td';return`<${tag}${csa(gI(ri,ci2))}>${v}</${tag}>`;}).join('')+'</tr>').join('')+'</table>';
+    navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob([htmlOut],{type:'text/html'})})]).then(()=>toast('Copied as cells')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
+    return;
+  }
+  if(copyMode){navigator.clipboard.writeText(content).then(()=>toast('Copied')).catch(()=>toast('Failed'));}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=filename;a.click();toast('Downloaded '+filename);}
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
+
+function delRow(){if(NR<=1)return;const prev=snap();const dr=hoverRow;NR--;build();let nr=0;for(let r=0;r<tbl.rows.length;r++){let or=nr;if(or>=dr)or++;for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(or,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}nr++;}clearSel();}
+function delCol(){if(NC<=1)return;const prev=snap();const dc=hoverCol;NC--;build();for(let r=0;r<NR;r++){let nc=0;for(let oc=0;oc<NC+1;oc++){if(oc===dc)continue;const d=gI(r,nc);const v=prev[key(r,oc)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}nc++;}}clearSel();}
+function addRowAt(dir){const prev=snap();const ins=dir<0?hoverRow:hoverRow+1;NR++;build();for(let r=NR-1;r>ins;r--)for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(r-1,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}for(let c=0;c<NC;c++){const d=gI(ins,c);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
+function addColAt(dir){const prev=snap();const ins=dir<0?hoverCol:hoverCol+1;NC++;build();for(let r=0;r<NR;r++){for(let c=NC-1;c>ins;c--){const d=gI(r,c);const v=prev[key(r,c-1)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}const d=gI(r,ins);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
+
+function updateEdge(e){
+  if(dragActive)return;
+  const tR=tbl.getBoundingClientRect();
+  const iR=tblInner.getBoundingClientRect();
+  const cx=e.clientX,cy=e.clientY;
+  const inside=cx>=tR.left&&cx<=tR.right&&cy>=tR.top&&cy<=tR.bottom;
+  if(inside){colGrp.classList.remove('show');rowGrp.classList.remove('show');return;}
+
+  let cr=-1,br=Infinity;
+  for(let r=0;r<tbl.rows.length;r++){const t=tbl.rows[r].getBoundingClientRect();const m=(t.top+t.bottom)/2;const dv=Math.abs(cy-m);if(dv<br){br=dv;cr=r;}}
+  let cc=-1,bc=Infinity;
+  for(let c=0;c<NC;c++){const cell=gC(0,c);if(!cell)continue;const t=cell.getBoundingClientRect();const m=(t.left+t.right)/2;const dv=Math.abs(cx-m);if(dv<bc){bc=dv;cc=c;}}
+  hoverRow=cr;hoverCol=cc;
+
+  const lz=cx<tR.left,rz=cx>tR.right,tz=cy<tR.top,bz=cy>tR.bottom;
+
+  if((lz||rz)&&cr>=0){
+    const trR=tbl.rows[cr].getBoundingClientRect();
+    const mid=trR.top-iR.top+trR.height/2;
+    rowGrp.style.top=(mid-31)+'px';
+    rowGrp.style.left=(cx-iR.left-10)+'px';
+    rowGrp.classList.add('show');
+  } else rowGrp.classList.remove('show');
+
+  if((tz||bz)&&cc>=0){
+    const cR=gC(0,cc).getBoundingClientRect();
+    const colMid=cR.left-iR.left+cR.width/2;
+    colGrp.style.left=(colMid-31)+'px';
+    colGrp.style.top=(cy-iR.top-10)+'px';
+    colGrp.classList.add('show');
+  } else colGrp.classList.remove('show');
+}
+
+document.getElementById('tbl-zone').addEventListener('mousemove',updateEdge);
+document.getElementById('tbl-zone').addEventListener('mouseleave',()=>{colGrp.classList.remove('show');rowGrp.classList.remove('show');});
+
+build();
+const starter=[['Name','Department','Role','Start date'],['Alice Chen','Engineering','Lead dev','2021-03'],['Bjorn Hansen','Design','Senior UX','2020-11'],['Mia Okafor','Product','PM','2022-06']];
+for(let r=0;r<NR;r++)for(let c=0;c<NC;c++){const d=gI(r,c);if(d&&starter[r]&&starter[r][c])d.innerText=starter[r][c];}
+[0,1,2,3].forEach(c=>{const d=gI(0,c);if(d)d.style.fontWeight='bold';});
+</script>
