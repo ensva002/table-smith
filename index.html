@@ -8,9 +8,10 @@
   --drop-bg:#c8e6cc;--drop-bg2:#e8f5e9;--drop-b:#3a7d44;
   --hole:#c4a898;--hole2:#8a6650;
   --bad-bg:#fde8e8;--bad-b:#c0392b;
+  --hdr-bar:#e0d4c4;--hdr-bar-active:#c8b99a;
 }
-#app{padding:1.5rem 0;min-height:600px;font-family:var(--font-sans);font-size:14px;color:var(--wt)}
-.wrap{background:var(--wb);border:1.5px solid var(--wb4);border-radius:10px;padding:14px;position:relative}
+#app{padding:1rem 0;min-height:620px;font-family:var(--font-sans);font-size:14px;color:var(--wt)}
+.wrap{background:var(--wb);border:1.5px solid var(--wb4);border-radius:10px;padding:14px}
 .toolbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px;background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;margin-bottom:10px}
 .tb-sep{width:1px;height:18px;background:var(--wb4);margin:0 3px;flex-shrink:0}
 .tb-btn{padding:4px 10px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:13px;line-height:1.4;user-select:none;font-family:inherit;position:relative}
@@ -24,9 +25,23 @@
 .sw-track.on{background:var(--wb6)}
 .sw-thumb{position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--wb);transition:left .15s}
 .sw-track.on .sw-thumb{left:17px}
+.tip{position:absolute;background:var(--wb7);color:var(--wb);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);transition:opacity .1s .5s}
+[class*="btn"]:hover .tip,[class*="sw-track"]:hover .tip{opacity:1}
 
-.tbl-zone{position:relative;margin:0 -44px;padding:0 44px}
-.tbl-zone-inner{position:relative;padding:44px 0;margin:-44px 0}
+/* grid layout: corner + col-bar + row-bar + table */
+.tbl-grid{display:grid;grid-template-columns:28px 1fr;grid-template-rows:22px 1fr;position:relative}
+.corner-cell{background:var(--hdr-bar);border:1px solid var(--wb4);border-right:none;border-bottom:none;border-radius:4px 0 0 0}
+.col-bar{display:flex;background:var(--hdr-bar);border:1px solid var(--wb4);border-left:none;border-bottom:none;border-radius:0 4px 0 0;overflow:hidden}
+.col-bar-cell{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-left:1px solid var(--wb4);user-select:none;transition:background .1s;letter-spacing:.04em;min-width:0}
+.col-bar-cell:first-child{border-left:none}
+.col-bar-cell:hover{background:var(--hdr-bar-active)}
+.col-bar-cell.active{background:var(--wb5);color:var(--wb)}
+.row-bar{display:flex;flex-direction:column;background:var(--hdr-bar);border:1px solid var(--wb4);border-right:none;border-top:none;overflow:hidden}
+.row-bar-cell{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-top:1px solid var(--wb4);user-select:none;transition:background .1s;min-height:0}
+.row-bar-cell:first-child{border-top:none}
+.row-bar-cell:hover{background:var(--hdr-bar-active)}
+.row-bar-cell.active{background:var(--wb5);color:var(--wb)}
+.tbl-wrap{overflow:auto;border:1px solid var(--wb4);border-radius:0 0 4px 0}
 
 table{border-collapse:collapse;width:100%;min-width:300px;table-layout:fixed}
 td{border:1px solid var(--wb4);padding:0;position:relative;vertical-align:top;background:var(--wb)}
@@ -41,8 +56,8 @@ td.drag-src{outline:2px dashed var(--hole2);outline-offset:-2px}
 td.drag-src .ci{background:var(--hole);color:transparent;user-select:none}
 td.drop-primary{outline:2px solid var(--drop-b);outline-offset:-2px}
 td.drop-primary .ci{background:var(--drop-bg)}
-td.drop-secondary .ci{background:var(--drop-bg2)}
 td.drop-secondary{outline:1px solid var(--drop-b);outline-offset:-1px}
+td.drop-secondary .ci{background:var(--drop-bg2)}
 .handle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:14px;height:20px;display:none;flex-direction:column;justify-content:center;align-items:center;gap:3px;cursor:grab;z-index:3;opacity:0.5}
 .handle:hover{opacity:1}
 .handle span{display:block;width:8px;height:1.5px;background:var(--wt2);border-radius:1px}
@@ -53,36 +68,29 @@ td:hover .handle{display:flex}
 @keyframes flyTo{from{transform:var(--fly-from)}to{transform:translate(0,0)}}
 .ci-flying{animation:flyTo 220ms cubic-bezier(.22,.8,.45,1) forwards}
 
-.ec-group{position:absolute;display:none;z-index:30}
-.ec-group.show{display:flex}
-.ec-group.col-grp{flex-direction:row;gap:3px;align-items:center}
-.ec-group.row-grp{flex-direction:column;gap:3px;align-items:center}
-.ec-btn{width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;line-height:1;user-select:none;position:relative;color:#fff;flex-shrink:0}
-.ec-btn.add{background:var(--wb6)}
-.ec-btn.add:hover{background:var(--wb7)}
-.ec-btn.del{background:#8a3020}
-.ec-btn.del:hover{background:#6b2010}
+/* popover for row/col actions */
+.rc-pop{position:fixed;display:none;flex-direction:column;gap:4px;background:var(--wb);border:1px solid var(--wb4);border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(58,31,16,0.15);z-index:300}
+.rc-pop.show{display:flex}
+.rc-pop-btn{display:flex;align-items:center;gap:7px;padding:5px 10px;border:none;background:none;color:var(--wt);cursor:pointer;font-size:13px;border-radius:5px;font-family:inherit;white-space:nowrap}
+.rc-pop-btn:hover{background:var(--wb2)}
+.rc-pop-btn .ico{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.rc-pop-btn .ico.add{background:var(--wb6);color:var(--wb)}
+.rc-pop-btn .ico.del{background:#8a3020;color:#fff}
 
-.tip{position:absolute;background:var(--wb7);color:var(--wb);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;transition:opacity .1s;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%)}
-.ec-btn:hover .tip,.tb-btn:hover .tip,.sz-btn:hover .tip,.sw-track:hover .tip{opacity:1;transition-delay:.6s}
-.ec-btn .tip{bottom:calc(100%+5px)}
-.row-grp .ec-btn .tip{bottom:auto;top:calc(100% + 5px);left:calc(100% + 5px);transform:none}
-
-.toast{position:absolute;bottom:-32px;left:50%;transform:translateX(-50%);background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--wt);opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;z-index:100}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--wt);opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;z-index:400}
 .toast.show{opacity:1}
 </style>
 
-<h2 class="sr-only"></h2>
 <div id="app"><div class="wrap">
   <div class="sz-row">
     <span>Rows</span>
-    <button class="sz-btn" onclick="chgSize('r',-1)">−<span class="tip">Remove a row</span></button>
+    <button class="sz-btn" onclick="chgSize('r',-1)">−<span class="tip">Remove last row</span></button>
     <span id="rn">4</span>
-    <button class="sz-btn" onclick="chgSize('r',1)">+<span class="tip">Add a row</span></button>
+    <button class="sz-btn" onclick="chgSize('r',1)">+<span class="tip">Add row</span></button>
     <span style="margin-left:8px">Cols</span>
-    <button class="sz-btn" onclick="chgSize('c',-1)">−<span class="tip">Remove a column</span></button>
+    <button class="sz-btn" onclick="chgSize('c',-1)">−<span class="tip">Remove last col</span></button>
     <span id="cn">4</span>
-    <button class="sz-btn" onclick="chgSize('c',1)">+<span class="tip">Add a column</span></button>
+    <button class="sz-btn" onclick="chgSize('c',1)">+<span class="tip">Add col</span></button>
   </div>
   <div class="toolbar">
     <button class="tb-btn" onclick="applyFmt('bold')"><b>B</b><span class="tip">Bold</span></button>
@@ -104,48 +112,103 @@ td:hover .handle{display:flex}
     <button class="tb-btn" onclick="doExport('cells')">Copy cells<span class="tip">Copy as spreadsheet cells</span></button>
     <div class="sw-wrap ml" style="position:relative">
       <span>Download</span>
-      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy</span></div>
+      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy to clipboard</span></div>
       <span>Copy</span>
     </div>
   </div>
 
-  <div class="tbl-zone" id="tbl-zone">
-    <div class="tbl-zone-inner" id="tbl-inner">
+  <div class="tbl-grid" id="tbl-grid">
+    <div class="corner-cell"></div>
+    <div class="col-bar" id="col-bar"></div>
+    <div class="row-bar" id="row-bar"></div>
+    <div class="tbl-wrap" id="tbl-wrap" style="position:relative">
       <table id="tbl"></table>
-      <div class="ec-group col-grp" id="col-grp">
-        <button class="ec-btn add" onclick="addColAt(-1)">+<span class="tip" style="bottom:auto;top:calc(100% + 5px)">Add col left</span></button>
-        <button class="ec-btn del" onclick="delCol()">×<span class="tip" style="bottom:auto;top:calc(100% + 5px)">Delete col</span></button>
-        <button class="ec-btn add" onclick="addColAt(0)">+<span class="tip" style="bottom:auto;top:calc(100% + 5px)">Add col right</span></button>
-      </div>
-      <div class="ec-group row-grp" id="row-grp">
-        <button class="ec-btn add" onclick="addRowAt(-1)">+<span class="tip">Add row above</span></button>
-        <button class="ec-btn del" onclick="delRow()">×<span class="tip">Delete row</span></button>
-        <button class="ec-btn add" onclick="addRowAt(0)">+<span class="tip">Add row below</span></button>
-      </div>
-      <div class="toast" id="toast"></div>
+      <div id="ghost-host" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible"></div>
     </div>
   </div>
 </div></div>
 
+<!-- popover -->
+<div class="rc-pop" id="rc-pop"></div>
+<div class="toast" id="toast"></div>
+
 <script>
 let NR=4,NC=4,hasHdr=true,copyMode=false;
 let sel=new Set(),lastSel=null;
-let dragActive=false,dragSelKeys=[],dragOriginData={};
-let dragGhostEl=null,dragTargetCell=null;
-let dragOffR=0,dragOffC=0;
+let dragActive=false,dragSelKeys=[],dragGhostEl=null,dragTargetCell=null,dragOffR=0,dragOffC=0;
 let isSelDrag=false,selDragStart=null;
-let hoverRow=-1,hoverCol=-1;
+let activePop=null; // {type:'row'|'col', idx}
 
 const tbl=document.getElementById('tbl');
-const tblInner=document.getElementById('tbl-inner');
-const colGrp=document.getElementById('col-grp');
-const rowGrp=document.getElementById('row-grp');
+const colBar=document.getElementById('col-bar');
+const rowBar=document.getElementById('row-bar');
+const pop=document.getElementById('rc-pop');
+const ghostHost=document.getElementById('ghost-host');
 
 function gC(r,c){return tbl.rows[r]&&tbl.rows[r].cells[c]}
 function gI(r,c){const t=gC(r,c);return t?t.querySelector('.ci'):null}
 function cPos(td){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)if(tbl.rows[r].cells[c]===td)return[r,c];return null;}
 function key(r,c){return r+','+c}
 function pk(k){const p=k.split(',');return[+p[0],+p[1]]}
+const COL_LABELS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function buildBars(){
+  colBar.innerHTML='';rowBar.innerHTML='';
+  for(let c=0;c<NC;c++){
+    const el=document.createElement('div');el.className='col-bar-cell';
+    el.textContent=COL_LABELS[c]||String(c+1);
+    el.dataset.col=c;
+    el.addEventListener('click',e=>{e.stopPropagation();openPop('col',c,el);});
+    colBar.appendChild(el);
+  }
+  for(let r=0;r<NR;r++){
+    const el=document.createElement('div');el.className='row-bar-cell';
+    el.textContent=String(r+1);
+    el.dataset.row=r;
+    el.addEventListener('click',e=>{e.stopPropagation();openPop('row',r,el);});
+    rowBar.appendChild(el);
+  }
+}
+
+function openPop(type,idx,anchor){
+  if(activePop&&activePop.type===type&&activePop.idx===idx){closePop();return;}
+  activePop={type,idx};
+  // highlight bar cell
+  document.querySelectorAll('.col-bar-cell,.row-bar-cell').forEach(el=>el.classList.remove('active'));
+  anchor.classList.add('active');
+  const rect=anchor.getBoundingClientRect();
+  pop.innerHTML='';
+  if(type==='col'){
+    addPopBtn('+','add','Add col left',()=>{doAddCol(idx);closePop();});
+    addPopBtn('×','del','Delete col',()=>{doDelCol(idx);closePop();});
+    addPopBtn('+','add','Add col right',()=>{doAddCol(idx+1);closePop();});
+    pop.style.left=rect.left+'px';
+    pop.style.top=(rect.bottom+4)+'px';
+  } else {
+    addPopBtn('+','add','Add row above',()=>{doAddRow(idx);closePop();});
+    addPopBtn('×','del','Delete row',()=>{doDelRow(idx);closePop();});
+    addPopBtn('+','add','Add row below',()=>{doAddRow(idx+1);closePop();});
+    pop.style.left=(rect.right+4)+'px';
+    pop.style.top=rect.top+'px';
+  }
+  pop.classList.add('show');
+}
+
+function addPopBtn(ico,cls,label,fn){
+  const btn=document.createElement('button');btn.className='rc-pop-btn';
+  btn.innerHTML=`<span class="ico ${cls}">${ico}</span>${label}`;
+  btn.addEventListener('click',fn);
+  pop.appendChild(btn);
+}
+
+function closePop(){
+  pop.classList.remove('show');
+  document.querySelectorAll('.col-bar-cell,.row-bar-cell').forEach(el=>el.classList.remove('active'));
+  activePop=null;
+}
+
+document.addEventListener('click',e=>{if(!pop.contains(e.target)&&!e.target.closest('.col-bar-cell,.row-bar-cell'))closePop();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop();});
 
 function makeCell(r,c,data){
   const cell=tbl.rows[r].cells[c];
@@ -166,7 +229,7 @@ function build(){
   const prev=snap();tbl.innerHTML='';
   for(let r=0;r<NR;r++){tbl.insertRow();for(let c=0;c<NC;c++){tbl.rows[r].insertCell();makeCell(r,c,prev[key(r,c)]);}}
   document.getElementById('rn').textContent=NR;document.getElementById('cn').textContent=NC;
-  refreshSel();
+  buildBars();refreshSel();
 }
 
 function snap(){
@@ -178,6 +241,11 @@ function snap(){
 }
 function applySnap(prev){Object.entries(prev).forEach(([k,v])=>{const[r,c]=pk(k);const d=gI(r,c);if(d){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}});}
 function chgSize(t,delta){const prev=snap();if(t==='r')NR=Math.max(1,NR+delta);else NC=Math.max(1,NC+delta);build();applySnap(prev);clearSel();}
+
+function doDelRow(dr){if(NR<=1)return;const prev=snap();NR--;build();let nr=0;for(let r=0;r<tbl.rows.length;r++){let or=nr;if(or>=dr)or++;for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(or,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}nr++;}clearSel();}
+function doDelCol(dc){if(NC<=1)return;const prev=snap();NC--;build();for(let r=0;r<NR;r++){let nc=0;for(let oc=0;oc<NC+1;oc++){if(oc===dc)continue;const d=gI(r,nc);const v=prev[key(r,oc)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}nc++;}}clearSel();}
+function doAddRow(ins){const prev=snap();NR++;build();for(let r=NR-1;r>ins;r--)for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(r-1,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}for(let c=0;c<NC;c++){const d=gI(ins,c);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
+function doAddCol(ins){const prev=snap();NC++;build();for(let r=0;r<NR;r++){for(let c=NC-1;c>ins;c--){const d=gI(r,c);const v=prev[key(r,c-1)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}const d=gI(r,ins);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
 
 function clearSel(){sel.clear();lastSel=null;refreshSel();}
 function addSel(r,c){sel.add(key(r,c));lastSel=[r,c];}
@@ -216,14 +284,13 @@ function ciStyle(d){if(!d)return'';const p=[];if(d.style.fontWeight==='bold')p.p
 function getSelBounds(){const arr=[];sel.forEach(k=>arr.push(pk(k)));if(!arr.length)return null;return{minR:Math.min(...arr.map(p=>p[0])),maxR:Math.max(...arr.map(p=>p[0])),minC:Math.min(...arr.map(p=>p[1])),maxC:Math.max(...arr.map(p=>p[1]))};}
 
 function onHandleDown(e){
-  e.preventDefault();e.stopPropagation();
+  e.preventDefault();e.stopPropagation();closePop();
   const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;
   const[hr,hc]=pos;
   if(!sel.has(key(hr,hc))){clearSel();addSel(hr,hc);refreshSel();}
   const bounds=getSelBounds();
   dragOffR=hr-bounds.minR;dragOffC=hc-bounds.minC;
   dragSelKeys=[...sel];
-  dragOriginData={};dragSelKeys.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)dragOriginData[k]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};});
   dragSelKeys.forEach(k=>{const[r,c]=pk(k);gC(r,c)?.classList.add('drag-src');});
   dragActive=true;buildGhost(bounds,e);
   document.addEventListener('mousemove',onDragMove);
@@ -240,12 +307,12 @@ function buildGhost(bounds,e){
     const d=gI(r,c);if(d){gc.innerHTML=d.innerHTML;const s=ciStyle(d);if(s)gc.style.cssText+=';'+s;}
     dragGhostEl.appendChild(gc);
   }
-  const zR=tblInner.getBoundingClientRect();
+  const zR=ghostHost.getBoundingClientRect();
   const anchor=gC(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
   const gw=anchor.width*(bounds.maxC-bounds.minC+1);
   dragGhostEl.style.left=(e.clientX-zR.left-gw+anchor.width-10)+'px';
   dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
-  tblInner.appendChild(dragGhostEl);
+  ghostHost.appendChild(dragGhostEl);
 }
 
 function getDropBounds(anchorCell){
@@ -256,18 +323,12 @@ function getDropBounds(anchorCell){
   if(destR<0||destC<0||destR+rows>NR||destC+cols>NC)return null;
   return{r:destR,c:destC,rows,cols,origBounds:bounds};
 }
-
-function clearDropHighlights(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++){gC(r,c).classList.remove('drop-primary','drop-secondary');}}
-function applyDropHighlights(db,targetCell){
-  for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++){
-    const cell=gC(r,c);if(!cell)continue;
-    cell.classList.add(cell===targetCell?'drop-primary':'drop-secondary');
-  }
-}
+function clearDropHL(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)gC(r,c).classList.remove('drop-primary','drop-secondary');}
+function applyDropHL(db,tc){for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++){const cell=gC(r,c);if(cell)cell.classList.add(cell===tc?'drop-primary':'drop-secondary');}}
 
 function onDragMove(e){
   if(!dragGhostEl)return;
-  const zR=tblInner.getBoundingClientRect();
+  const zR=ghostHost.getBoundingClientRect();
   const bounds=getSelBounds();
   const anchor=gC(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
   const gw=anchor.width*(bounds.maxC-bounds.minC+1);
@@ -275,11 +336,10 @@ function onDragMove(e){
   dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
   const el=document.elementFromPoint(e.clientX,e.clientY);
   const cell=el?el.closest('td'):null;
-  clearDropHighlights();dragTargetCell=null;
+  clearDropHL();dragTargetCell=null;
   if(cell&&tbl.contains(cell)&&!cell.classList.contains('drag-src')){
     dragTargetCell=cell;const db=getDropBounds(cell);
-    dragGhostEl.classList.toggle('bad',!db);
-    if(db)applyDropHighlights(db,cell);
+    dragGhostEl.classList.toggle('bad',!db);if(db)applyDropHL(db,cell);
   } else dragGhostEl.classList.remove('bad');
 }
 
@@ -296,7 +356,7 @@ function onDragUp(){
   document.removeEventListener('mousemove',onDragMove);
   if(dragGhostEl){dragGhostEl.remove();dragGhostEl=null;}
   dragSelKeys.forEach(k=>{const[r,c]=pk(k);gC(r,c)?.classList.remove('drag-src');});
-  clearDropHighlights();
+  clearDropHL();
   const db=dragTargetCell?getDropBounds(dragTargetCell):null;
   if(db){
     const bounds=getSelBounds();
@@ -321,7 +381,7 @@ function onDragUp(){
     const newSel=new Set();dstCells.forEach(([r,c])=>newSel.add(key(r,c)));
     sel=newSel;lastSel=[db.r+db.rows-1,db.c+db.cols-1];refreshSel();
   }
-  dragActive=false;dragSelKeys=[];dragOriginData={};dragTargetCell=null;
+  dragActive=false;dragSelKeys=[];dragTargetCell=null;
 }
 
 function applyFmt(cmd){
@@ -338,7 +398,6 @@ function colAlign(c){if(!hasHdr)return'';const d=gI(0,c);return d?d.style.textAl
 function mdAlignRow(w){return'| '+w.map((n,c)=>{const a=colAlign(c);if(a==='center')return':'+'-'.repeat(Math.max(1,n-2))+':';if(a==='right')return'-'.repeat(Math.max(1,n-1))+':';return'-'.repeat(n);}).join(' | ')+' |';}
 function buildMD(){const d=getRows();if(!d.length)return'';const w=d[0].map((_,c)=>Math.max(...d.map(r=>(r[c]||'').length),3));const lines=d.map(r=>'| '+r.map((v,c2)=>v.padEnd(w[c2])).join(' | ')+' |');lines.splice(1,0,mdAlignRow(w));return lines.join('\n');}
 function buildHTML(){let h='<table>\n';for(let r=0;r<tbl.rows.length;r++){h+='  <tr>';for(let c=0;c<tbl.rows[r].cells.length;c++){const d=gI(r,c);const tag=(r===0&&hasHdr)?'th':'td';h+=`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`;}h+='</tr>\n';}return h+'</table>';}
-
 function doExport(type){
   const d=getRows();let content='',filename='',mime='text/plain';
   if(type==='csv'){content=d.map(r=>r.map(escCSV).join(',')).join('\n');filename='table.csv';mime='text/csv';}
@@ -347,56 +406,14 @@ function doExport(type){
   else if(type==='tsv'){content=d.map(r=>r.join('\t')).join('\n');filename='table.tsv';}
   else if(type==='cells'){
     const tsv=d.map(r=>r.join('\t')).join('\n');
-    const htmlOut='<table>'+d.map((r,ri)=>'<tr>'+r.map((v,ci2)=>{const tag=(ri===0&&hasHdr)?'th':'td';return`<${tag}${csa(gI(ri,ci2))}>${v}</${tag}>`;}).join('')+'</tr>').join('')+'</table>';
-    navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob([htmlOut],{type:'text/html'})})]).then(()=>toast('Copied as cells')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
+    const ho='<table>'+d.map((r,ri)=>'<tr>'+r.map((v,ci2)=>{const tag=(ri===0&&hasHdr)?'th':'td';return`<${tag}${csa(gI(ri,ci2))}>${v}</${tag}>`;}).join('')+'</tr>').join('')+'</table>';
+    navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob([ho],{type:'text/html'})})]).then(()=>toast('Copied as cells')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
     return;
   }
   if(copyMode){navigator.clipboard.writeText(content).then(()=>toast('Copied')).catch(()=>toast('Failed'));}
   else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=filename;a.click();toast('Downloaded '+filename);}
 }
-
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
-
-function delRow(){if(NR<=1)return;const prev=snap();const dr=hoverRow;NR--;build();let nr=0;for(let r=0;r<tbl.rows.length;r++){let or=nr;if(or>=dr)or++;for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(or,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}nr++;}clearSel();}
-function delCol(){if(NC<=1)return;const prev=snap();const dc=hoverCol;NC--;build();for(let r=0;r<NR;r++){let nc=0;for(let oc=0;oc<NC+1;oc++){if(oc===dc)continue;const d=gI(r,nc);const v=prev[key(r,oc)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}nc++;}}clearSel();}
-function addRowAt(dir){const prev=snap();const ins=dir<0?hoverRow:hoverRow+1;NR++;build();for(let r=NR-1;r>ins;r--)for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(r-1,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}for(let c=0;c<NC;c++){const d=gI(ins,c);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
-function addColAt(dir){const prev=snap();const ins=dir<0?hoverCol:hoverCol+1;NC++;build();for(let r=0;r<NR;r++){for(let c=NC-1;c>ins;c--){const d=gI(r,c);const v=prev[key(r,c-1)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}const d=gI(r,ins);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
-
-function updateEdge(e){
-  if(dragActive)return;
-  const tR=tbl.getBoundingClientRect();
-  const iR=tblInner.getBoundingClientRect();
-  const cx=e.clientX,cy=e.clientY;
-  const inside=cx>=tR.left&&cx<=tR.right&&cy>=tR.top&&cy<=tR.bottom;
-  if(inside){colGrp.classList.remove('show');rowGrp.classList.remove('show');return;}
-
-  let cr=-1,br=Infinity;
-  for(let r=0;r<tbl.rows.length;r++){const t=tbl.rows[r].getBoundingClientRect();const m=(t.top+t.bottom)/2;const dv=Math.abs(cy-m);if(dv<br){br=dv;cr=r;}}
-  let cc=-1,bc=Infinity;
-  for(let c=0;c<NC;c++){const cell=gC(0,c);if(!cell)continue;const t=cell.getBoundingClientRect();const m=(t.left+t.right)/2;const dv=Math.abs(cx-m);if(dv<bc){bc=dv;cc=c;}}
-  hoverRow=cr;hoverCol=cc;
-
-  const lz=cx<tR.left,rz=cx>tR.right,tz=cy<tR.top,bz=cy>tR.bottom;
-
-  if((lz||rz)&&cr>=0){
-    const trR=tbl.rows[cr].getBoundingClientRect();
-    const mid=trR.top-iR.top+trR.height/2;
-    rowGrp.style.top=(mid-31)+'px';
-    rowGrp.style.left=(cx-iR.left-10)+'px';
-    rowGrp.classList.add('show');
-  } else rowGrp.classList.remove('show');
-
-  if((tz||bz)&&cc>=0){
-    const cR=gC(0,cc).getBoundingClientRect();
-    const colMid=cR.left-iR.left+cR.width/2;
-    colGrp.style.left=(colMid-31)+'px';
-    colGrp.style.top=(cy-iR.top-10)+'px';
-    colGrp.classList.add('show');
-  } else colGrp.classList.remove('show');
-}
-
-document.getElementById('tbl-zone').addEventListener('mousemove',updateEdge);
-document.getElementById('tbl-zone').addEventListener('mouseleave',()=>{colGrp.classList.remove('show');rowGrp.classList.remove('show');});
 
 build();
 const starter=[['Name','Department','Role','Start date'],['Alice Chen','Engineering','Lead dev','2021-03'],['Bjorn Hansen','Design','Senior UX','2020-11'],['Mia Okafor','Product','PM','2022-06']];
