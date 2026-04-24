@@ -3,12 +3,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --wb:#f2ebe3;--wb2:#e8ddd2;--wb3:#d9cbbf;--wb4:#b89f8a;--wb5:#8a6650;--wb6:#5c3a28;--wb7:#3a1f10;
-  --wt:#3a1f10;--wt2:#5c3a28;--wt3:#8a6650;
+  --wt:#3a1f10;--wt2:#5c3a28;
   --sel:#7a3a1a;--sel-bg:#f0ddd0;
   --drop-bg:#c8e6cc;--drop-bg2:#e8f5e9;--drop-b:#3a7d44;
   --hole:#c4a898;--hole2:#8a6650;
   --bad-bg:#fde8e8;--bad-b:#c0392b;
-  --hdr-bar:#e0d4c4;--hdr-bar-active:#c8b99a;
+  --bar:#e0d4c4;--bar-h:#c8b99a;--bar-a:#5c3a28;
 }
 #app{padding:1rem 0;min-height:620px;font-family:var(--font-sans);font-size:14px;color:var(--wt)}
 .wrap{background:var(--wb);border:1.5px solid var(--wb4);border-radius:10px;padding:14px}
@@ -28,20 +28,22 @@
 .tip{position:absolute;background:var(--wb7);color:var(--wb);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);transition:opacity .1s .5s}
 [class*="btn"]:hover .tip,[class*="sw-track"]:hover .tip{opacity:1}
 
-/* grid layout: corner + col-bar + row-bar + table */
-.tbl-grid{display:grid;grid-template-columns:28px 1fr;grid-template-rows:22px 1fr;position:relative}
-.corner-cell{background:var(--hdr-bar);border:1px solid var(--wb4);border-right:none;border-bottom:none;border-radius:4px 0 0 0}
-.col-bar{display:flex;background:var(--hdr-bar);border:1px solid var(--wb4);border-left:none;border-bottom:none;border-radius:0 4px 0 0;overflow:hidden}
-.col-bar-cell{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-left:1px solid var(--wb4);user-select:none;transition:background .1s;letter-spacing:.04em;min-width:0}
+/* layout: corner + col-bar + row-bar + table — all using real px sizes synced to table */
+.tbl-layout{display:flex;flex-direction:column}
+.tbl-layout-top{display:flex}
+.corner{width:28px;height:22px;flex-shrink:0;background:var(--bar);border:1px solid var(--wb4);border-right:none;border-bottom:none;border-radius:4px 0 0 0}
+.col-bar{display:flex;flex:1;background:var(--bar);border:1px solid var(--wb4);border-left:none;border-bottom:none;border-radius:0 4px 0 0;overflow:hidden}
+.col-bar-cell{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-left:1px solid var(--wb4);user-select:none;transition:background .1s;flex-shrink:0;overflow:hidden}
 .col-bar-cell:first-child{border-left:none}
-.col-bar-cell:hover{background:var(--hdr-bar-active)}
-.col-bar-cell.active{background:var(--wb5);color:var(--wb)}
-.row-bar{display:flex;flex-direction:column;background:var(--hdr-bar);border:1px solid var(--wb4);border-right:none;border-top:none;overflow:hidden}
-.row-bar-cell{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-top:1px solid var(--wb4);user-select:none;transition:background .1s;min-height:0}
+.col-bar-cell:hover{background:var(--bar-h)}
+.col-bar-cell.active{background:var(--bar-a);color:var(--wb)}
+.tbl-layout-body{display:flex}
+.row-bar{display:flex;flex-direction:column;width:28px;flex-shrink:0;background:var(--bar);border:1px solid var(--wb4);border-right:none;border-top:none}
+.row-bar-cell{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-top:1px solid var(--wb4);user-select:none;transition:background .1s;flex-shrink:0;overflow:hidden}
 .row-bar-cell:first-child{border-top:none}
-.row-bar-cell:hover{background:var(--hdr-bar-active)}
-.row-bar-cell.active{background:var(--wb5);color:var(--wb)}
-.tbl-wrap{overflow:auto;border:1px solid var(--wb4);border-radius:0 0 4px 0}
+.row-bar-cell:hover{background:var(--bar-h)}
+.row-bar-cell.active{background:var(--bar-a);color:var(--wb)}
+.tbl-wrap{flex:1;overflow:auto;border:1px solid var(--wb4);border-radius:0 0 4px 0;position:relative}
 
 table{border-collapse:collapse;width:100%;min-width:300px;table-layout:fixed}
 td{border:1px solid var(--wb4);padding:0;position:relative;vertical-align:top;background:var(--wb)}
@@ -68,7 +70,6 @@ td:hover .handle{display:flex}
 @keyframes flyTo{from{transform:var(--fly-from)}to{transform:translate(0,0)}}
 .ci-flying{animation:flyTo 220ms cubic-bezier(.22,.8,.45,1) forwards}
 
-/* popover for row/col actions */
 .rc-pop{position:fixed;display:none;flex-direction:column;gap:4px;background:var(--wb);border:1px solid var(--wb4);border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(58,31,16,0.15);z-index:300}
 .rc-pop.show{display:flex}
 .rc-pop-btn{display:flex;align-items:center;gap:7px;padding:5px 10px;border:none;background:none;color:var(--wt);cursor:pointer;font-size:13px;border-radius:5px;font-family:inherit;white-space:nowrap}
@@ -76,7 +77,6 @@ td:hover .handle{display:flex}
 .rc-pop-btn .ico{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .rc-pop-btn .ico.add{background:var(--wb6);color:var(--wb)}
 .rc-pop-btn .ico.del{background:#8a3020;color:#fff}
-
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--wt);opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;z-index:400}
 .toast.show{opacity:1}
 </style>
@@ -112,23 +112,26 @@ td:hover .handle{display:flex}
     <button class="tb-btn" onclick="doExport('cells')">Copy cells<span class="tip">Copy as spreadsheet cells</span></button>
     <div class="sw-wrap ml" style="position:relative">
       <span>Download</span>
-      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy to clipboard</span></div>
+      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy</span></div>
       <span>Copy</span>
     </div>
   </div>
 
-  <div class="tbl-grid" id="tbl-grid">
-    <div class="corner-cell"></div>
-    <div class="col-bar" id="col-bar"></div>
-    <div class="row-bar" id="row-bar"></div>
-    <div class="tbl-wrap" id="tbl-wrap" style="position:relative">
-      <table id="tbl"></table>
-      <div id="ghost-host" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible"></div>
+  <div class="tbl-layout" id="tbl-layout">
+    <div class="tbl-layout-top">
+      <div class="corner" id="corner"></div>
+      <div class="col-bar" id="col-bar"></div>
+    </div>
+    <div class="tbl-layout-body">
+      <div class="row-bar" id="row-bar"></div>
+      <div class="tbl-wrap" id="tbl-wrap">
+        <table id="tbl"></table>
+        <div id="ghost-host" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible"></div>
+      </div>
     </div>
   </div>
 </div></div>
 
-<!-- popover -->
 <div class="rc-pop" id="rc-pop"></div>
 <div class="toast" id="toast"></div>
 
@@ -137,20 +140,57 @@ let NR=4,NC=4,hasHdr=true,copyMode=false;
 let sel=new Set(),lastSel=null;
 let dragActive=false,dragSelKeys=[],dragGhostEl=null,dragTargetCell=null,dragOffR=0,dragOffC=0;
 let isSelDrag=false,selDragStart=null;
-let activePop=null; // {type:'row'|'col', idx}
+let activePop=null;
 
 const tbl=document.getElementById('tbl');
 const colBar=document.getElementById('col-bar');
 const rowBar=document.getElementById('row-bar');
 const pop=document.getElementById('rc-pop');
 const ghostHost=document.getElementById('ghost-host');
+const COL_LABELS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 function gC(r,c){return tbl.rows[r]&&tbl.rows[r].cells[c]}
 function gI(r,c){const t=gC(r,c);return t?t.querySelector('.ci'):null}
 function cPos(td){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)if(tbl.rows[r].cells[c]===td)return[r,c];return null;}
 function key(r,c){return r+','+c}
 function pk(k){const p=k.split(',');return[+p[0],+p[1]]}
-const COL_LABELS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+// Sync bar cells to actual rendered row/col sizes
+function syncBars(){
+  // columns: match each col-bar-cell width to the corresponding td in row 0
+  const row0=tbl.rows[0];
+  if(!row0)return;
+  const colCells=colBar.querySelectorAll('.col-bar-cell');
+  for(let c=0;c<NC;c++){
+    const td=row0.cells[c];
+    if(!td||!colCells[c])continue;
+    // use offsetWidth which includes border
+    colCells[c].style.width=td.offsetWidth+'px';
+    colCells[c].style.minWidth=td.offsetWidth+'px';
+    colCells[c].style.maxWidth=td.offsetWidth+'px';
+  }
+  // rows: match each row-bar-cell height to the corresponding tr
+  const rowCells=rowBar.querySelectorAll('.row-bar-cell');
+  for(let r=0;r<NR;r++){
+    const tr=tbl.rows[r];
+    if(!tr||!rowCells[r])continue;
+    rowCells[r].style.height=tr.offsetHeight+'px';
+    rowCells[r].style.minHeight=tr.offsetHeight+'px';
+    rowCells[r].style.maxHeight=tr.offsetHeight+'px';
+  }
+}
+
+// Use ResizeObserver to keep bars in sync whenever table changes size
+let ro=null;
+function observeTable(){
+  if(ro)ro.disconnect();
+  ro=new ResizeObserver(()=>syncBars());
+  ro.observe(tbl);
+  // also observe each cell for height changes (content editing)
+  for(let r=0;r<NR;r++)for(let c=0;c<NC;c++){
+    const d=gI(r,c);if(d)ro.observe(d);
+  }
+}
 
 function buildBars(){
   colBar.innerHTML='';rowBar.innerHTML='';
@@ -168,12 +208,13 @@ function buildBars(){
     el.addEventListener('click',e=>{e.stopPropagation();openPop('row',r,el);});
     rowBar.appendChild(el);
   }
+  // Defer sync until browser has laid out
+  requestAnimationFrame(()=>requestAnimationFrame(syncBars));
 }
 
 function openPop(type,idx,anchor){
   if(activePop&&activePop.type===type&&activePop.idx===idx){closePop();return;}
   activePop={type,idx};
-  // highlight bar cell
   document.querySelectorAll('.col-bar-cell,.row-bar-cell').forEach(el=>el.classList.remove('active'));
   anchor.classList.add('active');
   const rect=anchor.getBoundingClientRect();
@@ -182,7 +223,7 @@ function openPop(type,idx,anchor){
     addPopBtn('+','add','Add col left',()=>{doAddCol(idx);closePop();});
     addPopBtn('×','del','Delete col',()=>{doDelCol(idx);closePop();});
     addPopBtn('+','add','Add col right',()=>{doAddCol(idx+1);closePop();});
-    pop.style.left=rect.left+'px';
+    pop.style.left=Math.max(4,rect.left)+'px';
     pop.style.top=(rect.bottom+4)+'px';
   } else {
     addPopBtn('+','add','Add row above',()=>{doAddRow(idx);closePop();});
@@ -197,8 +238,7 @@ function openPop(type,idx,anchor){
 function addPopBtn(ico,cls,label,fn){
   const btn=document.createElement('button');btn.className='rc-pop-btn';
   btn.innerHTML=`<span class="ico ${cls}">${ico}</span>${label}`;
-  btn.addEventListener('click',fn);
-  pop.appendChild(btn);
+  btn.addEventListener('click',fn);pop.appendChild(btn);
 }
 
 function closePop(){
@@ -206,7 +246,6 @@ function closePop(){
   document.querySelectorAll('.col-bar-cell,.row-bar-cell').forEach(el=>el.classList.remove('active'));
   activePop=null;
 }
-
 document.addEventListener('click',e=>{if(!pop.contains(e.target)&&!e.target.closest('.col-bar-cell,.row-bar-cell'))closePop();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop();});
 
@@ -223,13 +262,14 @@ function makeCell(r,c,data){
   d.addEventListener('mouseover',onCIOver);
   d.addEventListener('keydown',onCIKey);
   d.addEventListener('copy',onCICopy);
+  d.addEventListener('input',()=>requestAnimationFrame(syncBars));
 }
 
 function build(){
   const prev=snap();tbl.innerHTML='';
   for(let r=0;r<NR;r++){tbl.insertRow();for(let c=0;c<NC;c++){tbl.rows[r].insertCell();makeCell(r,c,prev[key(r,c)]);}}
   document.getElementById('rn').textContent=NR;document.getElementById('cn').textContent=NC;
-  buildBars();refreshSel();
+  buildBars();observeTable();
 }
 
 function snap(){
@@ -268,7 +308,6 @@ function onCIKey(e){
 }
 function onCICopy(e){if(sel.size!==1)return;e.preventDefault();e.clipboardData.setData('text/plain',window.getSelection().toString());}
 function hasTxtSel(){return window.getSelection()&&window.getSelection().toString().length>0;}
-
 function copySelection(){
   const arr=[];sel.forEach(k=>arr.push(pk(k)));
   const minR=Math.min(...arr.map(p=>p[0])),maxR=Math.max(...arr.map(p=>p[0]));
@@ -296,7 +335,6 @@ function onHandleDown(e){
   document.addEventListener('mousemove',onDragMove);
   document.addEventListener('mouseup',onDragUp,{once:true});
 }
-
 function buildGhost(bounds,e){
   const rows=bounds.maxR-bounds.minR+1,cols=bounds.maxC-bounds.minC+1;
   dragGhostEl=document.createElement('div');dragGhostEl.className='ghost-grid';
@@ -314,18 +352,16 @@ function buildGhost(bounds,e){
   dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
   ghostHost.appendChild(dragGhostEl);
 }
-
 function getDropBounds(anchorCell){
   const pos=cPos(anchorCell);if(!pos)return null;
   const[ar,ac]=pos;const bounds=getSelBounds();
   const rows=bounds.maxR-bounds.minR+1,cols=bounds.maxC-bounds.minC+1;
   const destR=ar-dragOffR,destC=ac-dragOffC;
   if(destR<0||destC<0||destR+rows>NR||destC+cols>NC)return null;
-  return{r:destR,c:destC,rows,cols,origBounds:bounds};
+  return{r:destR,c:destC,rows,cols};
 }
 function clearDropHL(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)gC(r,c).classList.remove('drop-primary','drop-secondary');}
 function applyDropHL(db,tc){for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++){const cell=gC(r,c);if(cell)cell.classList.add(cell===tc?'drop-primary':'drop-secondary');}}
-
 function onDragMove(e){
   if(!dragGhostEl)return;
   const zR=ghostHost.getBoundingClientRect();
@@ -342,7 +378,6 @@ function onDragMove(e){
     dragGhostEl.classList.toggle('bad',!db);if(db)applyDropHL(db,cell);
   } else dragGhostEl.classList.remove('bad');
 }
-
 function animSwap(fromRect,toCell){
   const tRect=toCell.getBoundingClientRect();
   const dx=fromRect.left-tRect.left,dy=fromRect.top-tRect.top;
@@ -351,7 +386,6 @@ function animSwap(fromRect,toCell){
   void ci.offsetWidth;ci.classList.add('ci-flying');
   ci.addEventListener('animationend',()=>ci.classList.remove('ci-flying'),{once:true});
 }
-
 function onDragUp(){
   document.removeEventListener('mousemove',onDragMove);
   if(dragGhostEl){dragGhostEl.remove();dragGhostEl=null;}
@@ -382,10 +416,11 @@ function onDragUp(){
     sel=newSel;lastSel=[db.r+db.rows-1,db.c+db.cols-1];refreshSel();
   }
   dragActive=false;dragSelKeys=[];dragTargetCell=null;
+  requestAnimationFrame(syncBars);
 }
 
 function applyFmt(cmd){
-  if(sel.size>=1&&!hasTxtSel()){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});}
+  if(sel.size>=1&&!hasTxtSel()){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});requestAnimationFrame(syncBars);}
   else document.execCommand(cmd);
 }
 function applyAlign(a){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)d.style.textAlign=a;});}
