@@ -1,96 +1,151 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table Builder</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+
 :root{
+  --bg-page:#ede6d8;
   --wb:#f2ebe3;--wb2:#e8ddd2;--wb3:#d9cbbf;--wb4:#b89f8a;--wb5:#8a6650;--wb6:#5c3a28;--wb7:#3a1f10;
-  --wt:#3a1f10;--wt2:#5c3a28;
+  --wt:#3a1f10;--wt2:#5c3a28;--wt3:#8a6650;
   --sel:#7a3a1a;--sel-bg:#f0ddd0;
+  --sel-disj:#b8860b;--sel-disj-bg:#fdf5c0;
   --drop-bg:#c8e6cc;--drop-bg2:#e8f5e9;--drop-b:#3a7d44;
   --hole:#c4a898;--hole2:#8a6650;
   --bad-bg:#fde8e8;--bad-b:#c0392b;
   --bar:#e0d4c4;--bar-h:#c8b99a;--bar-a:#5c3a28;
+  --shadow:rgba(58,31,16,0.15);
+  --row-bar-w:28px;--col-bar-h:22px;--col-fixed-w:140px;
 }
-#app{padding:1rem 0;min-height:620px;font-family:var(--font-sans);font-size:14px;color:var(--wt)}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-page:#181410;
+    --wb:#221e18;--wb2:#2c2820;--wb3:#38302a;--wb4:#56463a;--wb5:#7a6252;--wb6:#9a7e68;--wb7:#c8aa90;
+    --wt:#e8ddd0;--wt2:#c0a080;--wt3:#8a6a50;
+    --sel:#c8a060;--sel-bg:#38280e;
+    --sel-disj:#c8a820;--sel-disj-bg:#2c2808;
+    --drop-bg:#182e1c;--drop-bg2:#121a14;--drop-b:#4aaa68;
+    --hole:#342c26;--hole2:#564638;
+    --bad-bg:#2e1212;--bad-b:#d06050;
+    --bar:#2c2820;--bar-h:#38302a;--bar-a:#7a6252;
+    --shadow:rgba(0,0,0,0.45);
+  }
+}
+
+body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:var(--wt);background:var(--bg-page);min-height:100vh;padding:2rem;transition:background .2s}
+#app{max-width:1100px;margin:0 auto}
 .wrap{background:var(--wb);border:1.5px solid var(--wb4);border-radius:10px;padding:14px}
+h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px;letter-spacing:.01em}
+
 .toolbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px;background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;margin-bottom:10px}
 .tb-sep{width:1px;height:18px;background:var(--wb4);margin:0 3px;flex-shrink:0}
-.tb-btn{padding:4px 10px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:13px;line-height:1.4;user-select:none;font-family:inherit;position:relative}
+.tb-btn{padding:4px 10px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:13px;line-height:1.4;user-select:none;font-family:inherit;position:relative;transition:background .1s}
 .tb-btn:hover{background:var(--wb3)}
-.sz-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:13px;color:var(--wt2)}
-.sz-btn{padding:1px 9px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:14px;line-height:1.6;font-family:inherit;position:relative}
+
+.sz-row{display:flex;gap:6px;align-items:center;margin-bottom:10px;font-size:13px;color:var(--wt2);flex-wrap:wrap}
+.sz-btn{padding:2px 9px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt);cursor:pointer;font-size:13px;line-height:1.6;font-family:inherit;position:relative;transition:background .1s}
 .sz-btn:hover{background:var(--wb3)}
-.sw-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--wt2)}
+.sz-sep{width:1px;height:22px;background:var(--wb4);margin:0 4px;flex-shrink:0;align-self:center}
+
+.sw-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--wt2);position:relative}
 .sw-wrap.ml{margin-left:auto}
 .sw-track{width:32px;height:17px;border-radius:9px;background:var(--wb4);position:relative;cursor:pointer;transition:background .15s;flex-shrink:0;border:1px solid var(--wb5)}
 .sw-track.on{background:var(--wb6)}
 .sw-thumb{position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--wb);transition:left .15s}
 .sw-track.on .sw-thumb{left:17px}
-.tip{position:absolute;background:var(--wb7);color:var(--wb);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);transition:opacity .1s .5s}
-[class*="btn"]:hover .tip,[class*="sw-track"]:hover .tip{opacity:1}
 
-/* layout: corner + col-bar + row-bar + table — all using real px sizes synced to table */
-.tbl-layout{display:flex;flex-direction:column}
-.tbl-layout-top{display:flex}
-.corner{width:28px;height:22px;flex-shrink:0;background:var(--bar);border:1px solid var(--wb4);border-right:none;border-bottom:none;border-radius:4px 0 0 0}
-.col-bar{display:flex;flex:1;background:var(--bar);border:1px solid var(--wb4);border-left:none;border-bottom:none;border-radius:0 4px 0 0;overflow:hidden}
-.col-bar-cell{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-left:1px solid var(--wb4);user-select:none;transition:background .1s;flex-shrink:0;overflow:hidden}
-.col-bar-cell:first-child{border-left:none}
-.col-bar-cell:hover{background:var(--bar-h)}
-.col-bar-cell.active{background:var(--bar-a);color:var(--wb)}
-.tbl-layout-body{display:flex}
-.row-bar{display:flex;flex-direction:column;width:28px;flex-shrink:0;background:var(--bar);border:1px solid var(--wb4);border-right:none;border-top:none}
-.row-bar-cell{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-top:1px solid var(--wb4);user-select:none;transition:background .1s;flex-shrink:0;overflow:hidden}
-.row-bar-cell:first-child{border-top:none}
-.row-bar-cell:hover{background:var(--bar-h)}
-.row-bar-cell.active{background:var(--bar-a);color:var(--wb)}
-.tbl-wrap{flex:1;overflow:auto;border:1px solid var(--wb4);border-radius:0 0 4px 0;position:relative}
+.tip{position:absolute;background:var(--wb7);color:var(--bg-page);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);transition:opacity .1s .5s;border:1px solid var(--wb5)}
+.tb-btn:hover .tip,.sz-btn:hover .tip,.sw-track:hover .tip{opacity:1}
 
-table{border-collapse:collapse;width:100%;min-width:300px;table-layout:fixed}
-td{border:1px solid var(--wb4);padding:0;position:relative;vertical-align:top;background:var(--wb)}
-td.hdr{background:var(--wb3)}
-.ci{padding:6px 26px 6px 8px;min-height:32px;outline:none;cursor:text;word-break:break-word;white-space:pre-wrap;color:var(--wt)}
+#save-indicator{font-size:11px;color:var(--wt3);opacity:0;transition:opacity .4s;margin-left:4px;user-select:none;flex-shrink:0}
+#save-indicator.show{opacity:1}
+
+.tbl-outer{overflow:auto;border:1px solid var(--wb4);border-radius:4px;position:relative;max-height:520px}
+.tbl-grid{display:grid;width:100%}
+.tbl-grid.endless{width:auto}
+.g-corner{background:var(--bar);border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);position:sticky;top:0;left:0;z-index:4}
+.g-col-hdr{background:var(--bar);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);user-select:none;overflow:hidden;position:sticky;top:0;z-index:3;transition:background .1s}
+.g-col-hdr:hover{background:var(--bar-h)}
+.g-col-hdr.active{background:var(--bar-a);color:var(--wb)}
+.g-row-hdr{background:var(--bar);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);user-select:none;overflow:hidden;position:sticky;left:0;z-index:2;transition:background .1s}
+.g-row-hdr:hover{background:var(--bar-h)}
+.g-row-hdr.active{background:var(--bar-a);color:var(--wb)}
+.g-cell{border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);position:relative;background:var(--wb);min-width:0}
+.g-cell.hdr{background:var(--wb3)}
+.g-cell.sel{outline:2px solid var(--sel);outline-offset:-2px;z-index:1}
+.g-cell.sel .ci{background:var(--sel-bg)}
+.g-cell.hdr.sel .ci{background:color-mix(in srgb,var(--sel-bg) 65%,var(--wb3))}
+.g-cell.sel-disj{outline:2px solid var(--sel-disj);outline-offset:-2px;z-index:1}
+.g-cell.sel-disj .ci{background:var(--sel-disj-bg)}
+.g-cell.hdr.sel-disj .ci{background:color-mix(in srgb,var(--sel-disj-bg) 65%,var(--wb3))}
+.g-cell.sel-disj .handle{display:none!important}
+.g-cell.drag-src{outline:2px dashed var(--hole2);outline-offset:-2px}
+.g-cell.drag-src .ci{background:var(--hole);color:transparent;user-select:none}
+.g-cell.drop-primary{outline:2px solid var(--drop-b);outline-offset:-2px}
+.g-cell.drop-primary .ci{background:var(--drop-bg)}
+.g-cell.drop-secondary{outline:1px solid var(--drop-b);outline-offset:-1px}
+.g-cell.drop-secondary .ci{background:var(--drop-bg2)}
+.ci{padding:6px 26px 6px 8px;min-height:32px;outline:none;cursor:text;word-break:break-word;white-space:pre-wrap;color:var(--wt);width:100%;height:100%}
 .ci:focus{background:color-mix(in srgb,var(--sel-bg) 55%,var(--wb))}
-td.hdr .ci:focus{background:color-mix(in srgb,var(--sel-bg) 45%,var(--wb3))}
-td.sel{outline:2px solid var(--sel);outline-offset:-2px;z-index:1}
-td.sel .ci{background:var(--sel-bg)}
-td.hdr.sel .ci{background:color-mix(in srgb,var(--sel-bg) 65%,var(--wb3))}
-td.drag-src{outline:2px dashed var(--hole2);outline-offset:-2px}
-td.drag-src .ci{background:var(--hole);color:transparent;user-select:none}
-td.drop-primary{outline:2px solid var(--drop-b);outline-offset:-2px}
-td.drop-primary .ci{background:var(--drop-bg)}
-td.drop-secondary{outline:1px solid var(--drop-b);outline-offset:-1px}
-td.drop-secondary .ci{background:var(--drop-bg2)}
+.g-cell.hdr .ci:focus{background:color-mix(in srgb,var(--sel-bg) 45%,var(--wb3))}
+.g-cell.sel-disj .ci:focus{background:color-mix(in srgb,var(--sel-disj-bg) 70%,var(--wb))}
 .handle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:14px;height:20px;display:none;flex-direction:column;justify-content:center;align-items:center;gap:3px;cursor:grab;z-index:3;opacity:0.5}
 .handle:hover{opacity:1}
 .handle span{display:block;width:8px;height:1.5px;background:var(--wt2);border-radius:1px}
-td:hover .handle{display:flex}
-.ghost-grid{position:absolute;pointer-events:none;z-index:9999;display:grid;gap:2px;transform:rotate(1.5deg) scale(1.04);opacity:0.95;box-shadow:0 8px 20px rgba(58,31,16,0.18)}
+.g-cell:hover .handle{display:flex}
+
+.ghost-grid{position:fixed;pointer-events:none;z-index:9999;display:grid;gap:2px;transform:rotate(1.5deg) scale(1.04);opacity:0.95;box-shadow:0 8px 20px var(--shadow)}
 .ghost-cell{border-radius:5px;background:var(--wb);border:1.5px solid var(--sel);padding:5px 8px;font-size:13px;color:var(--wt);white-space:pre-wrap;word-break:break-word;min-height:28px;overflow:hidden}
-.ghost-grid.bad .ghost-cell{border-color:var(--bad-b);background:var(--bad-bg);color:#7a1010}
+.ghost-grid.bad .ghost-cell{border-color:var(--bad-b);background:var(--bad-bg);color:var(--bad-b)}
 @keyframes flyTo{from{transform:var(--fly-from)}to{transform:translate(0,0)}}
 .ci-flying{animation:flyTo 220ms cubic-bezier(.22,.8,.45,1) forwards}
 
-.rc-pop{position:fixed;display:none;flex-direction:column;gap:4px;background:var(--wb);border:1px solid var(--wb4);border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(58,31,16,0.15);z-index:300}
+.rc-pop{position:fixed;display:none;flex-direction:column;gap:4px;background:var(--wb);border:1px solid var(--wb4);border-radius:8px;padding:6px;box-shadow:0 4px 14px var(--shadow);z-index:300}
 .rc-pop.show{display:flex}
-.rc-pop-btn{display:flex;align-items:center;gap:7px;padding:5px 10px;border:none;background:none;color:var(--wt);cursor:pointer;font-size:13px;border-radius:5px;font-family:inherit;white-space:nowrap}
+.rc-pop-btn{display:flex;align-items:center;gap:7px;padding:5px 10px;border:none;background:none;color:var(--wt);cursor:pointer;font-size:13px;border-radius:5px;font-family:inherit;white-space:nowrap;transition:background .1s}
 .rc-pop-btn:hover{background:var(--wb2)}
 .rc-pop-btn .ico{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .rc-pop-btn .ico.add{background:var(--wb6);color:var(--wb)}
 .rc-pop-btn .ico.del{background:#8a3020;color:#fff}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.dialog{background:var(--wb);border:1px solid var(--wb4);border-radius:10px;padding:24px;max-width:340px;width:90%;box-shadow:0 8px 32px var(--shadow)}
+.dialog h2{font-size:15px;font-weight:600;color:var(--wt);margin-bottom:8px}
+.dialog p{font-size:13px;color:var(--wt2);margin-bottom:18px;line-height:1.5}
+.dialog-btns{display:flex;gap:8px;justify-content:flex-end}
+.dialog-btns button{padding:5px 16px;border-radius:6px;border:1px solid var(--wb4);cursor:pointer;font-size:13px;font-family:inherit;transition:background .1s}
+.btn-cancel{background:var(--wb);color:var(--wt)}
+.btn-cancel:hover{background:var(--wb2)}
+.btn-danger{background:#8a3020;color:#fff;border-color:#8a3020}
+.btn-danger:hover{background:#6b2010}
+
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;padding:6px 14px;font-size:13px;color:var(--wt);opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;z-index:400}
 .toast.show{opacity:1}
+#file-input{display:none}
 </style>
-
+</head>
+<body>
 <div id="app"><div class="wrap">
+  <h1>Table Builder</h1>
   <div class="sz-row">
     <span>Rows</span>
     <button class="sz-btn" onclick="chgSize('r',-1)">−<span class="tip">Remove last row</span></button>
     <span id="rn">4</span>
     <button class="sz-btn" onclick="chgSize('r',1)">+<span class="tip">Add row</span></button>
-    <span style="margin-left:8px">Cols</span>
+    <span style="margin-left:4px">Cols</span>
     <button class="sz-btn" onclick="chgSize('c',-1)">−<span class="tip">Remove last col</span></button>
     <span id="cn">4</span>
     <button class="sz-btn" onclick="chgSize('c',1)">+<span class="tip">Add col</span></button>
+    <div class="sz-sep"></div>
+    <button class="sz-btn" onclick="importFromFile()">Import file<span class="tip">Import CSV, TSV, or HTML table from a file</span></button>
+    <button class="sz-btn" onclick="importFromClipboard()">Import clipboard<span class="tip">Paste CSV, TSV, or HTML table from clipboard</span></button>
+    <button class="sz-btn" onclick="confirmNewTable()">New table<span class="tip">Start fresh with an empty 4×4 table</span></button>
+    <span id="save-indicator">Saved ✓</span>
   </div>
   <div class="toolbar">
     <button class="tb-btn" onclick="applyFmt('bold')"><b>B</b><span class="tip">Bold</span></button>
@@ -100,9 +155,15 @@ td:hover .handle{display:flex}
     <button class="tb-btn" onclick="applyAlign('center')">&#8596;<span class="tip">Align center</span></button>
     <button class="tb-btn" onclick="applyAlign('right')">&#8677;<span class="tip">Align right</span></button>
     <div class="tb-sep"></div>
-    <div class="sw-wrap" style="position:relative">
+    <div class="sw-wrap">
       <span>Header</span>
       <div class="sw-track on" id="sw-hdr" onclick="togHdr()"><div class="sw-thumb"></div><span class="tip">Toggle header row</span></div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="sw-wrap">
+      <span>Fit</span>
+      <div class="sw-track" id="sw-fit" onclick="togFit()"><div class="sw-thumb"></div><span class="tip">Fit: columns share width · Endless: fixed 140px, scroll horizontally</span></div>
+      <span>Endless</span>
     </div>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="doExport('csv')">CSV<span class="tip">Export as CSV</span></button>
@@ -110,112 +171,226 @@ td:hover .handle{display:flex}
     <button class="tb-btn" onclick="doExport('html')">HTML<span class="tip">Export as HTML</span></button>
     <button class="tb-btn" onclick="doExport('tsv')">TSV<span class="tip">Export as TSV</span></button>
     <button class="tb-btn" onclick="doExport('cells')">Copy cells<span class="tip">Copy as spreadsheet cells</span></button>
-    <div class="sw-wrap ml" style="position:relative">
+    <div class="sw-wrap ml">
       <span>Download</span>
-      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy</span></div>
+      <div class="sw-track" id="sw-mode" onclick="togMode()"><div class="sw-thumb"></div><span class="tip">Toggle download / copy to clipboard</span></div>
       <span>Copy</span>
     </div>
   </div>
-
-  <div class="tbl-layout" id="tbl-layout">
-    <div class="tbl-layout-top">
-      <div class="corner" id="corner"></div>
-      <div class="col-bar" id="col-bar"></div>
-    </div>
-    <div class="tbl-layout-body">
-      <div class="row-bar" id="row-bar"></div>
-      <div class="tbl-wrap" id="tbl-wrap">
-        <table id="tbl"></table>
-        <div id="ghost-host" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible"></div>
-      </div>
-    </div>
+  <div class="tbl-outer" id="tbl-outer">
+    <div class="tbl-grid" id="tbl-grid"></div>
   </div>
 </div></div>
 
+<div class="overlay" id="overlay">
+  <div class="dialog">
+    <h2 id="dlg-title"></h2>
+    <p id="dlg-body"></p>
+    <div class="dialog-btns">
+      <button class="btn-cancel" onclick="closeDialog()">Cancel</button>
+      <button id="dlg-ok" class="btn-danger" onclick="dialogOk()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".csv,.tsv,.txt,.html,.htm" onchange="handleFileInput(event)">
 <div class="rc-pop" id="rc-pop"></div>
 <div class="toast" id="toast"></div>
 
 <script>
-let NR=4,NC=4,hasHdr=true,copyMode=false;
+const SAVE_KEY='table_builder_v1';
+let NR=4,NC=4,hasHdr=true,copyMode=false,fitMode=true;
 let sel=new Set(),lastSel=null;
 let dragActive=false,dragSelKeys=[],dragGhostEl=null,dragTargetCell=null,dragOffR=0,dragOffC=0;
 let isSelDrag=false,selDragStart=null;
-let activePop=null;
+let activePop=null,pendingDialogFn=null;
+let scrollRaf=null,scrollVx=0,scrollVy=0;
+const cellEditing=new WeakMap();
+let saveTimer=null,saveFlashTimer=null;
+const SCROLL_ZONE=48,SCROLL_MAX=18;
 
-const tbl=document.getElementById('tbl');
-const colBar=document.getElementById('col-bar');
-const rowBar=document.getElementById('row-bar');
+const grid=document.getElementById('tbl-grid');
+const outer=document.getElementById('tbl-outer');
 const pop=document.getElementById('rc-pop');
-const ghostHost=document.getElementById('ghost-host');
 const COL_LABELS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-function gC(r,c){return tbl.rows[r]&&tbl.rows[r].cells[c]}
-function gI(r,c){const t=gC(r,c);return t?t.querySelector('.ci'):null}
-function cPos(td){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)if(tbl.rows[r].cells[c]===td)return[r,c];return null;}
+// ── Persistence ───────────────────────────────────────────────────────────────
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,600);}
+function saveNow(){
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({NR,NC,hasHdr,fitMode,cells:snap()}));}catch(e){}
+  const el=document.getElementById('save-indicator');
+  el.classList.add('show');
+  clearTimeout(saveFlashTimer);
+  saveFlashTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+function loadSaved(){
+  try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}
+}
+
+// ── Core helpers ──────────────────────────────────────────────────────────────
 function key(r,c){return r+','+c}
 function pk(k){const p=k.split(',');return[+p[0],+p[1]]}
-
-// Sync bar cells to actual rendered row/col sizes
-function syncBars(){
-  // columns: match each col-bar-cell width to the corresponding td in row 0
-  const row0=tbl.rows[0];
-  if(!row0)return;
-  const colCells=colBar.querySelectorAll('.col-bar-cell');
-  for(let c=0;c<NC;c++){
-    const td=row0.cells[c];
-    if(!td||!colCells[c])continue;
-    // use offsetWidth which includes border
-    colCells[c].style.width=td.offsetWidth+'px';
-    colCells[c].style.minWidth=td.offsetWidth+'px';
-    colCells[c].style.maxWidth=td.offsetWidth+'px';
-  }
-  // rows: match each row-bar-cell height to the corresponding tr
-  const rowCells=rowBar.querySelectorAll('.row-bar-cell');
-  for(let r=0;r<NR;r++){
-    const tr=tbl.rows[r];
-    if(!tr||!rowCells[r])continue;
-    rowCells[r].style.height=tr.offsetHeight+'px';
-    rowCells[r].style.minHeight=tr.offsetHeight+'px';
-    rowCells[r].style.maxHeight=tr.offsetHeight+'px';
-  }
+function gCell(r,c){return grid.querySelector(`[data-r="${r}"][data-c="${c}"]`);}
+function gCI(r,c){const t=gCell(r,c);return t?t.querySelector('.ci'):null;}
+function isRectSel(){
+  if(sel.size<=1)return true;
+  const arr=[...sel].map(pk);
+  const minR=Math.min(...arr.map(p=>p[0])),maxR=Math.max(...arr.map(p=>p[0]));
+  const minC=Math.min(...arr.map(p=>p[1])),maxC=Math.max(...arr.map(p=>p[1]));
+  return sel.size===(maxR-minR+1)*(maxC-minC+1);
 }
 
-// Use ResizeObserver to keep bars in sync whenever table changes size
-let ro=null;
-function observeTable(){
-  if(ro)ro.disconnect();
-  ro=new ResizeObserver(()=>syncBars());
-  ro.observe(tbl);
-  // also observe each cell for height changes (content editing)
-  for(let r=0;r<NR;r++)for(let c=0;c<NC;c++){
-    const d=gI(r,c);if(d)ro.observe(d);
-  }
+// ── Build ─────────────────────────────────────────────────────────────────────
+function setGridTemplate(){
+  const cw=fitMode?'1fr':'var(--col-fixed-w)';
+  grid.style.gridTemplateColumns='var(--row-bar-w) '+Array(NC).fill(cw).join(' ');
+  grid.style.gridTemplateRows='var(--col-bar-h) '+Array(NR).fill('auto').join(' ');
+  grid.className=fitMode?'tbl-grid':'tbl-grid endless';
+  grid.style.width=fitMode?'100%':(28+NC*140)+'px';
 }
-
-function buildBars(){
-  colBar.innerHTML='';rowBar.innerHTML='';
+function build(skipSave){
+  const prev=snap();grid.innerHTML='';setGridTemplate();
+  const corner=document.createElement('div');
+  corner.className='g-corner';corner.style.gridColumn='1';corner.style.gridRow='1';
+  grid.appendChild(corner);
   for(let c=0;c<NC;c++){
-    const el=document.createElement('div');el.className='col-bar-cell';
-    el.textContent=COL_LABELS[c]||String(c+1);
-    el.dataset.col=c;
+    const el=document.createElement('div');el.className='g-col-hdr';
+    el.style.gridColumn=String(c+2);el.style.gridRow='1';
+    el.textContent=COL_LABELS[c]||String(c+1);el.dataset.col=c;
     el.addEventListener('click',e=>{e.stopPropagation();openPop('col',c,el);});
-    colBar.appendChild(el);
+    grid.appendChild(el);
   }
   for(let r=0;r<NR;r++){
-    const el=document.createElement('div');el.className='row-bar-cell';
-    el.textContent=String(r+1);
-    el.dataset.row=r;
-    el.addEventListener('click',e=>{e.stopPropagation();openPop('row',r,el);});
-    rowBar.appendChild(el);
+    const rh=document.createElement('div');rh.className='g-row-hdr';
+    rh.style.gridColumn='1';rh.style.gridRow=String(r+2);
+    rh.textContent=String(r+1);rh.dataset.row=r;
+    rh.addEventListener('click',e=>{e.stopPropagation();openPop('row',r,rh);});
+    grid.appendChild(rh);
+    for(let c=0;c<NC;c++){
+      const cell=document.createElement('div');
+      cell.className='g-cell'+(r===0&&hasHdr?' hdr':'');
+      cell.style.gridColumn=String(c+2);cell.style.gridRow=String(r+2);
+      cell.dataset.r=r;cell.dataset.c=c;
+      const d=document.createElement('div');d.className='ci';d.contentEditable='true';
+      const pv=prev[key(r,c)];
+      if(pv){d.innerHTML=pv.h||'';d.style.textAlign=pv.a||'';d.style.fontWeight=pv.fw||'';d.style.fontStyle=pv.fs||'';}
+      d.addEventListener('mousedown',onCIDown);d.addEventListener('mouseover',onCIOver);
+      d.addEventListener('keydown',onCIKey);d.addEventListener('copy',onCICopy);
+      d.addEventListener('focus',()=>cellEditing.set(d,false));
+      d.addEventListener('input',()=>{cellEditing.set(d,true);scheduleSave();});
+      const handle=document.createElement('div');handle.className='handle';
+      handle.innerHTML='<span></span><span></span><span></span>';
+      handle.addEventListener('mousedown',onHandleDown);
+      cell.appendChild(d);cell.appendChild(handle);grid.appendChild(cell);
+    }
   }
-  // Defer sync until browser has laid out
-  requestAnimationFrame(()=>requestAnimationFrame(syncBars));
+  document.getElementById('rn').textContent=NR;
+  document.getElementById('cn').textContent=NC;
+  document.getElementById('sw-hdr').classList.toggle('on',hasHdr);
+  document.getElementById('sw-fit').classList.toggle('on',!fitMode);
+  refreshSel();
+  if(!skipSave)scheduleSave();
+}
+function snap(){
+  const o={};
+  grid.querySelectorAll('.g-cell').forEach(cell=>{
+    const r=+cell.dataset.r,c=+cell.dataset.c,d=cell.querySelector('.ci');
+    if(d)o[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};
+  });
+  return o;
+}
+function applySnap(prev,skipSave){
+  Object.entries(prev).forEach(([k,v])=>{
+    const[r,c]=pk(k);const d=gCI(r,c);
+    if(d){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}
+  });
+  if(!skipSave)scheduleSave();
+}
+function writeCell(r,c,v){const d=gCI(r,c);if(!d||!v)return;d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}
+
+// ── Size & structure ──────────────────────────────────────────────────────────
+function chgSize(t,d){const p=snap();if(t==='r')NR=Math.max(1,NR+d);else NC=Math.max(1,NC+d);build(true);applySnap(p);clearSel();}
+function togFit(){fitMode=!fitMode;const p=snap();build(true);applySnap(p,true);scheduleSave();}
+function doDelRow(dr){if(NR<=1)return;const p=snap();NR--;build(true);let nr=0;for(let r=0;r<NR;r++){let or=nr;if(or>=dr)or++;for(let c=0;c<NC;c++)writeCell(r,c,p[key(or,c)]);nr++;}clearSel();scheduleSave();}
+function doDelCol(dc){if(NC<=1)return;const p=snap();NC--;build(true);for(let r=0;r<NR;r++){let nc=0;for(let oc=0;oc<NC+1;oc++){if(oc===dc)continue;writeCell(r,nc,p[key(r,oc)]);nc++;}}clearSel();scheduleSave();}
+function doAddRow(ins){const p=snap();NR++;build(true);for(let r=NR-1;r>ins;r--)for(let c=0;c<NC;c++)writeCell(r,c,p[key(r-1,c)]);for(let c=0;c<NC;c++){const d=gCI(ins,c);if(d){d.innerHTML='';d.style.cssText='';}}clearSel();scheduleSave();}
+function doAddCol(ins){const p=snap();NC++;build(true);for(let r=0;r<NR;r++){for(let c=NC-1;c>ins;c--)writeCell(r,c,p[key(r,c-1)]);const d=gCI(r,ins);if(d){d.innerHTML='';d.style.cssText='';}}clearSel();scheduleSave();}
+
+// ── New table / Import ────────────────────────────────────────────────────────
+function confirmNewTable(){
+  showDialog('Start a new table?','This will clear all current content and start with an empty 4×4 table.',()=>{
+    NR=4;NC=4;hasHdr=true;fitMode=true;
+    build(true);clearSel();saveNow();toast('New table');
+  });
+}
+function importFromFile(){document.getElementById('file-input').click();}
+function handleFileInput(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const txt=ev.target.result,ext=f.name.split('.').pop().toLowerCase();
+    if(ext==='html'||ext==='htm')importHTML(txt);
+    else importDelimited(txt,ext==='tsv'||txt.includes('\t')?'\t':',');
+  };
+  reader.readAsText(f);
+  e.target.value='';
+}
+async function importFromClipboard(){
+  try{
+    const txt=await navigator.clipboard.readText();
+    if(!txt.trim()){toast('Clipboard is empty');return;}
+    if(/<table/i.test(txt))importHTML(txt);
+    else importDelimited(txt,txt.includes('\t')?'\t':',');
+  }catch(e){toast('Could not read clipboard');}
+}
+function importHTML(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const tbl=doc.querySelector('table');
+  if(!tbl){toast('No table found in HTML');return;}
+  const rows=[...tbl.querySelectorAll('tr')];
+  if(!rows.length)return;
+  loadData(rows.map(tr=>[...tr.querySelectorAll('th,td')].map(td=>({
+    text:td.innerText||td.textContent||'',
+    bold:td.tagName==='TH'||td.style.fontWeight==='bold',
+    italic:td.style.fontStyle==='italic',
+    align:td.style.textAlign||''
+  }))),true);
+}
+function importDelimited(txt,delim){
+  const lines=txt.trim().split(/\r?\n/);
+  loadData(lines.map(l=>l.split(delim).map(v=>({
+    text:v.replace(/^"|"$/g,'').replace(/""/g,'"'),
+    bold:false,italic:false,align:''
+  }))),false);
+}
+function loadData(data,fromHTML){
+  if(!data.length)return;
+  const nr=data.length,nc=Math.max(...data.map(r=>r.length));
+  NR=nr;NC=nc;hasHdr=fromHTML;
+  const prev={};
+  data.forEach((row,r)=>row.forEach((cell,c)=>{
+    prev[key(r,c)]={h:cell.text,a:cell.align||'',fw:cell.bold?'bold':'',fs:cell.italic?'italic':''};
+  }));
+  build(true);applySnap(prev,true);saveNow();
+  toast('Imported '+nr+'×'+nc+' table');
 }
 
+// ── Dialog ────────────────────────────────────────────────────────────────────
+function showDialog(title,body,onOk){
+  document.getElementById('dlg-title').textContent=title;
+  document.getElementById('dlg-body').textContent=body;
+  pendingDialogFn=onOk;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeDialog(){document.getElementById('overlay').classList.remove('show');pendingDialogFn=null;}
+function dialogOk(){const fn=pendingDialogFn;closeDialog();if(fn)fn();}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDialog();});
+
+// ── Popover ───────────────────────────────────────────────────────────────────
 function openPop(type,idx,anchor){
   if(activePop&&activePop.type===type&&activePop.idx===idx){closePop();return;}
   activePop={type,idx};
-  document.querySelectorAll('.col-bar-cell,.row-bar-cell').forEach(el=>el.classList.remove('active'));
+  grid.querySelectorAll('.g-col-hdr,.g-row-hdr').forEach(el=>el.classList.remove('active'));
   anchor.classList.add('active');
   const rect=anchor.getBoundingClientRect();
   pop.innerHTML='';
@@ -223,216 +398,226 @@ function openPop(type,idx,anchor){
     addPopBtn('+','add','Add col left',()=>{doAddCol(idx);closePop();});
     addPopBtn('×','del','Delete col',()=>{doDelCol(idx);closePop();});
     addPopBtn('+','add','Add col right',()=>{doAddCol(idx+1);closePop();});
-    pop.style.left=Math.max(4,rect.left)+'px';
-    pop.style.top=(rect.bottom+4)+'px';
+    pop.style.left=Math.max(4,rect.left)+'px';pop.style.top=(rect.bottom+4)+'px';
   } else {
     addPopBtn('+','add','Add row above',()=>{doAddRow(idx);closePop();});
     addPopBtn('×','del','Delete row',()=>{doDelRow(idx);closePop();});
     addPopBtn('+','add','Add row below',()=>{doAddRow(idx+1);closePop();});
-    pop.style.left=(rect.right+4)+'px';
-    pop.style.top=rect.top+'px';
+    pop.style.left=(rect.right+4)+'px';pop.style.top=rect.top+'px';
   }
   pop.classList.add('show');
 }
-
 function addPopBtn(ico,cls,label,fn){
   const btn=document.createElement('button');btn.className='rc-pop-btn';
   btn.innerHTML=`<span class="ico ${cls}">${ico}</span>${label}`;
   btn.addEventListener('click',fn);pop.appendChild(btn);
 }
-
 function closePop(){
   pop.classList.remove('show');
-  document.querySelectorAll('.col-bar-cell,.row-bar-cell').forEach(el=>el.classList.remove('active'));
+  grid.querySelectorAll('.g-col-hdr,.g-row-hdr').forEach(el=>el.classList.remove('active'));
   activePop=null;
 }
-document.addEventListener('click',e=>{if(!pop.contains(e.target)&&!e.target.closest('.col-bar-cell,.row-bar-cell'))closePop();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop();});
+document.addEventListener('click',e=>{if(!pop.contains(e.target)&&!e.target.closest('.g-col-hdr,.g-row-hdr'))closePop();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePop();closeDialog();}});
 
-function makeCell(r,c,data){
-  const cell=tbl.rows[r].cells[c];
-  if(r===0&&hasHdr)cell.classList.add('hdr');
-  const d=document.createElement('div');d.className='ci';d.contentEditable='true';
-  if(data){d.innerHTML=data.h||'';if(data.a)d.style.textAlign=data.a;if(data.fw)d.style.fontWeight=data.fw;if(data.fs)d.style.fontStyle=data.fs;}
-  const handle=document.createElement('div');handle.className='handle';
-  handle.innerHTML='<span></span><span></span><span></span>';
-  handle.addEventListener('mousedown',onHandleDown);
-  cell.appendChild(d);cell.appendChild(handle);
-  d.addEventListener('mousedown',onCIDown);
-  d.addEventListener('mouseover',onCIOver);
-  d.addEventListener('keydown',onCIKey);
-  d.addEventListener('copy',onCICopy);
-  d.addEventListener('input',()=>requestAnimationFrame(syncBars));
+// ── Selection ─────────────────────────────────────────────────────────────────
+function cPosFromCI(d){const c=d.closest('.g-cell');if(!c)return null;return[+c.dataset.r,+c.dataset.c];}
+function focusCell(r,c){
+  const d=gCI(r,c);if(!d)return;
+  clearSel();addSel(r,c);refreshSel();d.focus();
+  const rng=document.createRange();rng.selectNodeContents(d);rng.collapse(false);
+  const s=window.getSelection();s.removeAllRanges();s.addRange(rng);
 }
-
-function build(){
-  const prev=snap();tbl.innerHTML='';
-  for(let r=0;r<NR;r++){tbl.insertRow();for(let c=0;c<NC;c++){tbl.rows[r].insertCell();makeCell(r,c,prev[key(r,c)]);}}
-  document.getElementById('rn').textContent=NR;document.getElementById('cn').textContent=NC;
-  buildBars();observeTable();
-}
-
-function snap(){
-  const o={};
-  for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++){
-    const d=gI(r,c);if(d)o[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};
-  }
-  return o;
-}
-function applySnap(prev){Object.entries(prev).forEach(([k,v])=>{const[r,c]=pk(k);const d=gI(r,c);if(d){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}});}
-function chgSize(t,delta){const prev=snap();if(t==='r')NR=Math.max(1,NR+delta);else NC=Math.max(1,NC+delta);build();applySnap(prev);clearSel();}
-
-function doDelRow(dr){if(NR<=1)return;const prev=snap();NR--;build();let nr=0;for(let r=0;r<tbl.rows.length;r++){let or=nr;if(or>=dr)or++;for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(or,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}nr++;}clearSel();}
-function doDelCol(dc){if(NC<=1)return;const prev=snap();NC--;build();for(let r=0;r<NR;r++){let nc=0;for(let oc=0;oc<NC+1;oc++){if(oc===dc)continue;const d=gI(r,nc);const v=prev[key(r,oc)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}nc++;}}clearSel();}
-function doAddRow(ins){const prev=snap();NR++;build();for(let r=NR-1;r>ins;r--)for(let c=0;c<NC;c++){const d=gI(r,c);const v=prev[key(r-1,c)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}for(let c=0;c<NC;c++){const d=gI(ins,c);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
-function doAddCol(ins){const prev=snap();NC++;build();for(let r=0;r<NR;r++){for(let c=NC-1;c>ins;c--){const d=gI(r,c);const v=prev[key(r,c-1)];if(d&&v){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}}const d=gI(r,ins);if(d){d.innerHTML='';d.style.textAlign='';d.style.fontWeight='';d.style.fontStyle='';}}clearSel();}
-
 function clearSel(){sel.clear();lastSel=null;refreshSel();}
 function addSel(r,c){sel.add(key(r,c));lastSel=[r,c];}
-function refreshSel(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)gC(r,c).classList.toggle('sel',sel.has(key(r,c)));}
-function selRange(r1,c1,r2,c2){for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)sel.add(key(r,c));lastSel=[r2,c2];refreshSel();}
+function refreshSel(){
+  const rect=isRectSel();
+  grid.querySelectorAll('.g-cell').forEach(cell=>{
+    const k=key(+cell.dataset.r,+cell.dataset.c),inSel=sel.has(k);
+    cell.classList.toggle('sel',inSel&&rect);
+    cell.classList.toggle('sel-disj',inSel&&!rect);
+  });
+}
+function selRange(r1,c1,r2,c2){
+  for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)
+    for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)
+      sel.add(key(r,c));
+  lastSel=[r2,c2];refreshSel();
+}
 
 function onCIDown(e){
   if(e.target.closest('.handle'))return;
-  const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;const[r,c]=pos;
+  const pos=cPosFromCI(e.currentTarget);if(!pos)return;const[r,c]=pos;
   if(e.shiftKey&&lastSel){selRange(lastSel[0],lastSel[1],r,c);e.preventDefault();return;}
   if(e.ctrlKey||e.metaKey){sel.has(key(r,c))?sel.delete(key(r,c)):addSel(r,c);refreshSel();e.preventDefault();return;}
   clearSel();addSel(r,c);refreshSel();
   isSelDrag=true;selDragStart=[r,c];
   document.addEventListener('mouseup',()=>{isSelDrag=false;},{once:true});
 }
-function onCIOver(e){if(!isSelDrag||!selDragStart)return;const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;sel.clear();selRange(selDragStart[0],selDragStart[1],pos[0],pos[1]);}
+function onCIOver(e){if(!isSelDrag||!selDragStart)return;const pos=cPosFromCI(e.currentTarget);if(!pos)return;sel.clear();selRange(selDragStart[0],selDragStart[1],pos[0],pos[1]);}
+
 function onCIKey(e){
-  if((e.key==='Delete'||e.key==='Backspace')&&sel.size>=1&&!hasTxtSel()){e.preventDefault();sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)d.innerHTML='';});}
-  if((e.ctrlKey||e.metaKey)&&e.key==='c'&&sel.size>0){e.preventDefault();copySelection();}
+  const pos=cPosFromCI(e.currentTarget);if(!pos)return;
+  const[r,c]=pos,d=e.currentTarget;
+  const editing=cellEditing.get(d)===true,multi=sel.size>1;
+
+  if(multi){
+    if(e.key==='Tab'){e.preventDefault();if(e.shiftKey){if(c>0)focusCell(r,c-1);else if(r>0)focusCell(r-1,NC-1);}else{if(c<NC-1)focusCell(r,c+1);else if(r<NR-1)focusCell(r+1,0);}return;}
+    if(e.key==='ArrowUp'){e.preventDefault();if(r>0)focusCell(r-1,c);return;}
+    if(e.key==='ArrowDown'){e.preventDefault();if(r<NR-1)focusCell(r+1,c);return;}
+    if(e.key==='ArrowLeft'){e.preventDefault();if(c>0)focusCell(r,c-1);return;}
+    if(e.key==='ArrowRight'){e.preventDefault();if(c<NC-1)focusCell(r,c+1);return;}
+    if(e.key==='Delete'){e.preventDefault();sel.forEach(k=>{const[r2,c2]=pk(k);const d2=gCI(r2,c2);if(d2)d2.innerHTML='';});scheduleSave();return;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelection();return;}
+    if(!e.ctrlKey&&!e.metaKey&&(e.key.length<=1||e.key==='Backspace'||e.key==='Enter')){e.preventDefault();}
+    return;
+  }
+  if(e.key==='Tab'){e.preventDefault();if(e.shiftKey){if(c>0)focusCell(r,c-1);else if(r>0)focusCell(r-1,NC-1);}else{if(c<NC-1)focusCell(r,c+1);else if(r<NR-1)focusCell(r+1,0);}return;}
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(r<NR-1)focusCell(r+1,c);return;}
+  if(e.key==='ArrowUp'){e.preventDefault();if(r>0)focusCell(r-1,c);return;}
+  if(e.key==='ArrowDown'){e.preventDefault();if(r<NR-1)focusCell(r+1,c);return;}
+  if(e.key==='ArrowLeft'&&!editing){e.preventDefault();if(c>0)focusCell(r,c-1);return;}
+  if(e.key==='ArrowRight'&&!editing){e.preventDefault();if(c<NC-1)focusCell(r,c+1);return;}
+  if(e.key==='Delete'&&!editing){e.preventDefault();const d2=gCI(r,c);if(d2){d2.innerHTML='';scheduleSave();}return;}
+  if(e.key==='Backspace'){cellEditing.set(d,true);return;}
+  if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelection();return;}
+  if(e.key.length===1&&!e.ctrlKey&&!e.metaKey)cellEditing.set(d,true);
 }
 function onCICopy(e){if(sel.size!==1)return;e.preventDefault();e.clipboardData.setData('text/plain',window.getSelection().toString());}
-function hasTxtSel(){return window.getSelection()&&window.getSelection().toString().length>0;}
+
 function copySelection(){
-  const arr=[];sel.forEach(k=>arr.push(pk(k)));
+  const arr=[...sel].map(pk);
   const minR=Math.min(...arr.map(p=>p[0])),maxR=Math.max(...arr.map(p=>p[0]));
   const minC=Math.min(...arr.map(p=>p[1])),maxC=Math.max(...arr.map(p=>p[1]));
-  const rows=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const d=gI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}
+  const rows=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const d=gCI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}
   const tsv=rows.map(r=>r.join('\t')).join('\n');
-  const htmlRows=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const d=gI(r,c);const tag=(r===0&&hasHdr&&minR===0)?'th':'td';row.push(`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`);}htmlRows.push('<tr>'+row.join('')+'</tr>');}
-  navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob(['<table>'+htmlRows.join('')+'</table>'],{type:'text/html'})})]).then(()=>toast('Copied')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
+  const hr=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const d=gCI(r,c);const tag=(r===0&&hasHdr&&minR===0)?'th':'td';row.push(`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`);}hr.push('<tr>'+row.join('')+'</tr>');}
+  navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob(['<table>'+hr.join('')+'</table>'],{type:'text/html'})})]).then(()=>toast('Copied')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
 }
-
 function csa(d){if(!d)return'';const p=[];if(d.style.textAlign)p.push('text-align:'+d.style.textAlign);if(d.style.fontWeight==='bold')p.push('font-weight:bold');if(d.style.fontStyle==='italic')p.push('font-style:italic');return p.length?' style="'+p.join(';')+'"':'';}
 function ciStyle(d){if(!d)return'';const p=[];if(d.style.fontWeight==='bold')p.push('font-weight:bold');if(d.style.fontStyle==='italic')p.push('font-style:italic');if(d.style.textAlign)p.push('text-align:'+d.style.textAlign);return p.join(';');}
-function getSelBounds(){const arr=[];sel.forEach(k=>arr.push(pk(k)));if(!arr.length)return null;return{minR:Math.min(...arr.map(p=>p[0])),maxR:Math.max(...arr.map(p=>p[0])),minC:Math.min(...arr.map(p=>p[1])),maxC:Math.max(...arr.map(p=>p[1]))};}
+function getSelBounds(){const arr=[...sel].map(pk);if(!arr.length)return null;return{minR:Math.min(...arr.map(p=>p[0])),maxR:Math.max(...arr.map(p=>p[0])),minC:Math.min(...arr.map(p=>p[1])),maxC:Math.max(...arr.map(p=>p[1]))};}
 
+// ── Edge scroll ───────────────────────────────────────────────────────────────
+function startScrollLoop(){
+  if(scrollRaf)return;
+  function tick(){if(!dragActive){scrollRaf=null;return;}if(scrollVx||scrollVy){outer.scrollLeft+=scrollVx;outer.scrollTop+=scrollVy;}scrollRaf=requestAnimationFrame(tick);}
+  scrollRaf=requestAnimationFrame(tick);
+}
+function stopScrollLoop(){if(scrollRaf){cancelAnimationFrame(scrollRaf);scrollRaf=null;}scrollVx=0;scrollVy=0;}
+function updateScrollVelocity(cx,cy){
+  const rect=outer.getBoundingClientRect();scrollVx=0;scrollVy=0;
+  const dl=cx-rect.left,dr=rect.right-cx,dt=cy-rect.top,db=rect.bottom-cy;
+  if(dl<SCROLL_ZONE)scrollVx=-Math.round(SCROLL_MAX*(1-dl/SCROLL_ZONE));
+  else if(dr<SCROLL_ZONE)scrollVx=Math.round(SCROLL_MAX*(1-dr/SCROLL_ZONE));
+  if(dt<SCROLL_ZONE)scrollVy=-Math.round(SCROLL_MAX*(1-dt/SCROLL_ZONE));
+  else if(db<SCROLL_ZONE)scrollVy=Math.round(SCROLL_MAX*(1-db/SCROLL_ZONE));
+}
+
+// ── Drag ──────────────────────────────────────────────────────────────────────
 function onHandleDown(e){
+  if(!isRectSel())return;
   e.preventDefault();e.stopPropagation();closePop();
-  const cell=e.currentTarget.closest('td');const pos=cPos(cell);if(!pos)return;
-  const[hr,hc]=pos;
+  const cell=e.currentTarget.closest('.g-cell'),hr=+cell.dataset.r,hc=+cell.dataset.c;
   if(!sel.has(key(hr,hc))){clearSel();addSel(hr,hc);refreshSel();}
   const bounds=getSelBounds();
   dragOffR=hr-bounds.minR;dragOffC=hc-bounds.minC;
   dragSelKeys=[...sel];
-  dragSelKeys.forEach(k=>{const[r,c]=pk(k);gC(r,c)?.classList.add('drag-src');});
+  dragSelKeys.forEach(k=>{const[r2,c2]=pk(k);gCell(r2,c2)?.classList.add('drag-src');});
   dragActive=true;buildGhost(bounds,e);
   document.addEventListener('mousemove',onDragMove);
   document.addEventListener('mouseup',onDragUp,{once:true});
+  startScrollLoop();
 }
 function buildGhost(bounds,e){
   const rows=bounds.maxR-bounds.minR+1,cols=bounds.maxC-bounds.minC+1;
   dragGhostEl=document.createElement('div');dragGhostEl.className='ghost-grid';
   dragGhostEl.style.gridTemplateColumns=`repeat(${cols},1fr)`;
-  dragGhostEl.style.position='absolute';dragGhostEl.style.minWidth='60px';
+  dragGhostEl.style.position='fixed';dragGhostEl.style.minWidth='60px';
   for(let r=bounds.minR;r<=bounds.maxR;r++)for(let c=bounds.minC;c<=bounds.maxC;c++){
     const gc=document.createElement('div');gc.className='ghost-cell';
-    const d=gI(r,c);if(d){gc.innerHTML=d.innerHTML;const s=ciStyle(d);if(s)gc.style.cssText+=';'+s;}
+    const d=gCI(r,c);if(d){gc.innerHTML=d.innerHTML;const s=ciStyle(d);if(s)gc.style.cssText+=';'+s;}
     dragGhostEl.appendChild(gc);
   }
-  const zR=ghostHost.getBoundingClientRect();
-  const anchor=gC(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
-  const gw=anchor.width*(bounds.maxC-bounds.minC+1);
-  dragGhostEl.style.left=(e.clientX-zR.left-gw+anchor.width-10)+'px';
-  dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
-  ghostHost.appendChild(dragGhostEl);
+  const anchor=gCell(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
+  dragGhostEl.style.left=(e.clientX-anchor.width*cols+anchor.width-10)+'px';
+  dragGhostEl.style.top=(e.clientY-16)+'px';
+  document.body.appendChild(dragGhostEl);
 }
 function getDropBounds(anchorCell){
-  const pos=cPos(anchorCell);if(!pos)return null;
-  const[ar,ac]=pos;const bounds=getSelBounds();
+  const ar=+anchorCell.dataset.r,ac=+anchorCell.dataset.c,bounds=getSelBounds();
   const rows=bounds.maxR-bounds.minR+1,cols=bounds.maxC-bounds.minC+1;
   const destR=ar-dragOffR,destC=ac-dragOffC;
   if(destR<0||destC<0||destR+rows>NR||destC+cols>NC)return null;
   return{r:destR,c:destC,rows,cols};
 }
-function clearDropHL(){for(let r=0;r<tbl.rows.length;r++)for(let c=0;c<tbl.rows[r].cells.length;c++)gC(r,c).classList.remove('drop-primary','drop-secondary');}
-function applyDropHL(db,tc){for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++){const cell=gC(r,c);if(cell)cell.classList.add(cell===tc?'drop-primary':'drop-secondary');}}
+function clearDropHL(){grid.querySelectorAll('.g-cell').forEach(c=>c.classList.remove('drop-primary','drop-secondary'));}
+function applyDropHL(db,tc){for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++){const cell=gCell(r,c);if(!cell)continue;cell.classList.add(cell===tc?'drop-primary':'drop-secondary');}}
 function onDragMove(e){
   if(!dragGhostEl)return;
-  const zR=ghostHost.getBoundingClientRect();
-  const bounds=getSelBounds();
-  const anchor=gC(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
-  const gw=anchor.width*(bounds.maxC-bounds.minC+1);
-  dragGhostEl.style.left=(e.clientX-zR.left-gw+anchor.width-10)+'px';
-  dragGhostEl.style.top=(e.clientY-zR.top-16)+'px';
-  const el=document.elementFromPoint(e.clientX,e.clientY);
-  const cell=el?el.closest('td'):null;
+  const bounds=getSelBounds(),anchor=gCell(bounds.minR+dragOffR,bounds.minC+dragOffC)?.getBoundingClientRect()||{width:80};
+  dragGhostEl.style.left=(e.clientX-anchor.width*(bounds.maxC-bounds.minC+1)+anchor.width-10)+'px';
+  dragGhostEl.style.top=(e.clientY-16)+'px';
+  updateScrollVelocity(e.clientX,e.clientY);
+  const el=document.elementFromPoint(e.clientX,e.clientY),cell=el?.closest('.g-cell');
   clearDropHL();dragTargetCell=null;
-  if(cell&&tbl.contains(cell)&&!cell.classList.contains('drag-src')){
-    dragTargetCell=cell;const db=getDropBounds(cell);
-    dragGhostEl.classList.toggle('bad',!db);if(db)applyDropHL(db,cell);
-  } else dragGhostEl.classList.remove('bad');
+  if(cell){const db=getDropBounds(cell);dragGhostEl.classList.toggle('bad',!db);if(db){dragTargetCell=cell;applyDropHL(db,cell);}}
+  else dragGhostEl.classList.remove('bad');
 }
-function animSwap(fromRect,toCell){
-  const tRect=toCell.getBoundingClientRect();
-  const dx=fromRect.left-tRect.left,dy=fromRect.top-tRect.top;
+function animFly(fromRect,toCell){
+  const tRect=toCell.getBoundingClientRect(),dx=fromRect.left-tRect.left,dy=fromRect.top-tRect.top;
+  if(dx===0&&dy===0)return;
   const ci=toCell.querySelector('.ci');
   ci.classList.remove('ci-flying');ci.style.setProperty('--fly-from',`translate(${dx}px,${dy}px)`);
   void ci.offsetWidth;ci.classList.add('ci-flying');
   ci.addEventListener('animationend',()=>ci.classList.remove('ci-flying'),{once:true});
 }
 function onDragUp(){
-  document.removeEventListener('mousemove',onDragMove);
+  document.removeEventListener('mousemove',onDragMove);stopScrollLoop();
   if(dragGhostEl){dragGhostEl.remove();dragGhostEl=null;}
-  dragSelKeys.forEach(k=>{const[r,c]=pk(k);gC(r,c)?.classList.remove('drag-src');});
+  dragSelKeys.forEach(k=>{const[r,c]=pk(k);gCell(r,c)?.classList.remove('drag-src');});
   clearDropHL();
   const db=dragTargetCell?getDropBounds(dragTargetCell):null;
   if(db){
     const bounds=getSelBounds();
-    const srcCells=[];for(let r=bounds.minR;r<=bounds.maxR;r++)for(let c=bounds.minC;c<=bounds.maxC;c++)srcCells.push([r,c]);
-    const dstCells=[];for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++)dstCells.push([r,c]);
-    const srcSnap={};srcCells.forEach(([r,c])=>{const d=gI(r,c);if(d)srcSnap[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};});
-    const dstSnap={};dstCells.forEach(([r,c])=>{if(!srcSnap[key(r,c)]){const d=gI(r,c);if(d)dstSnap[key(r,c)]={h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle};}});
-    const srcRects={};srcCells.forEach(([r,c])=>{const cell=gC(r,c);if(cell)srcRects[key(r,c)]=cell.getBoundingClientRect();});
-    const dstRects={};dstCells.forEach(([r,c])=>{const cell=gC(r,c);if(cell)dstRects[key(r,c)]=cell.getBoundingClientRect();});
-    srcCells.forEach(([sr,sc],i)=>{
-      const[dr,dc]=dstCells[i];const d=gI(dr,dc);const src=srcSnap[key(sr,sc)];if(!d||!src)return;
-      animSwap(srcRects[key(sr,sc)],gC(dr,dc));
-      d.innerHTML=src.h;d.style.textAlign=src.a||'';d.style.fontWeight=src.fw||'';d.style.fontStyle=src.fs||'';
+    const srcPos=[];for(let r=bounds.minR;r<=bounds.maxR;r++)for(let c=bounds.minC;c<=bounds.maxC;c++)srcPos.push([r,c]);
+    const dstPos=[];for(let r=db.r;r<db.r+db.rows;r++)for(let c=db.c;c<db.c+db.cols;c++)dstPos.push([r,c]);
+    const touched=new Map();
+    [...srcPos,...dstPos].forEach(([r,c])=>{const k=key(r,c);if(!touched.has(k)){const d=gCI(r,c);touched.set(k,d?{h:d.innerHTML,a:d.style.textAlign,fw:d.style.fontWeight,fs:d.style.fontStyle}:{h:'',a:'',fw:'',fs:''});}});
+    const rects=new Map();touched.forEach((_,k)=>{const[r,c]=pk(k);const cell=gCell(r,c);if(cell)rects.set(k,cell.getBoundingClientRect());});
+    const newState=new Map(touched);
+    srcPos.forEach(([sr,sc],i)=>newState.set(key(...dstPos[i]),touched.get(key(sr,sc))));
+    const srcSet=new Set(srcPos.map(([r,c])=>key(r,c))),dstSet=new Set(dstPos.map(([r,c])=>key(r,c)));
+    const onlySrc=srcPos.filter(([r,c])=>!dstSet.has(key(r,c))),onlyDst=dstPos.filter(([r,c])=>!srcSet.has(key(r,c)));
+    onlySrc.forEach(([sr,sc],i)=>newState.set(key(sr,sc),i<onlyDst.length?touched.get(key(...onlyDst[i])):{h:'',a:'',fw:'',fs:''}));
+    newState.forEach((v,k)=>{
+      const[r,c]=pk(k);let fk=null;
+      srcPos.forEach(([sr,sc],i)=>{if(key(...dstPos[i])===k)fk=key(sr,sc);});
+      onlySrc.forEach(([sr,sc],i)=>{if(key(sr,sc)===k&&i<onlyDst.length)fk=key(...onlyDst[i]);});
+      if(fk&&fk!==k){const fr=rects.get(fk);if(fr)animFly(fr,gCell(r,c));}
+      const d=gCI(r,c);if(d){d.innerHTML=v.h;d.style.textAlign=v.a||'';d.style.fontWeight=v.fw||'';d.style.fontStyle=v.fs||'';}
     });
-    const displaced=dstCells.filter(([r,c])=>!srcSnap[key(r,c)]);
-    displaced.forEach(([dr,dc])=>{
-      const data=dstSnap[key(dr,dc)];if(!data)return;
-      const idx=dstCells.findIndex(([r,c])=>r===dr&&c===dc);
-      const[sr,sc]=srcCells[idx];const d=gI(sr,sc);
-      if(d){animSwap(dstRects[key(dr,dc)],gC(sr,sc));d.innerHTML=data.h;d.style.textAlign=data.a||'';d.style.fontWeight=data.fw||'';d.style.fontStyle=data.fs||'';}
-    });
-    const newSel=new Set();dstCells.forEach(([r,c])=>newSel.add(key(r,c)));
-    sel=newSel;lastSel=[db.r+db.rows-1,db.c+db.cols-1];refreshSel();
+    sel=new Set(dstPos.map(([r,c])=>key(r,c)));lastSel=[db.r+db.rows-1,db.c+db.cols-1];refreshSel();scheduleSave();
   }
   dragActive=false;dragSelKeys=[];dragTargetCell=null;
-  requestAnimationFrame(syncBars);
 }
 
+// ── Formatting & toggles ──────────────────────────────────────────────────────
 function applyFmt(cmd){
-  if(sel.size>=1&&!hasTxtSel()){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});requestAnimationFrame(syncBars);}
+  if(sel.size>=1){sel.forEach(k=>{const[r,c]=pk(k);const d=gCI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});scheduleSave();}
   else document.execCommand(cmd);
 }
-function applyAlign(a){sel.forEach(k=>{const[r,c]=pk(k);const d=gI(r,c);if(d)d.style.textAlign=a;});}
-function togHdr(){hasHdr=!hasHdr;for(let c=0;c<NC;c++){const cell=gC(0,c);if(cell)cell.classList.toggle('hdr',hasHdr);}document.getElementById('sw-hdr').classList.toggle('on',hasHdr);}
+function applyAlign(a){sel.forEach(k=>{const[r,c]=pk(k);const d=gCI(r,c);if(d)d.style.textAlign=a;});scheduleSave();}
+function togHdr(){hasHdr=!hasHdr;grid.querySelectorAll('.g-cell').forEach(cell=>{if(+cell.dataset.r===0)cell.classList.toggle('hdr',hasHdr);});document.getElementById('sw-hdr').classList.toggle('on',hasHdr);scheduleSave();}
 function togMode(){copyMode=!copyMode;document.getElementById('sw-mode').classList.toggle('on',copyMode);}
 
-function getRows(){const rows=[];for(let r=0;r<tbl.rows.length;r++){const row=[];for(let c=0;c<tbl.rows[r].cells.length;c++){const d=gI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}return rows;}
+// ── Export ────────────────────────────────────────────────────────────────────
+function getRows(){const rows=[];for(let r=0;r<NR;r++){const row=[];for(let c=0;c<NC;c++){const d=gCI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}return rows;}
 function escCSV(v){return/[,"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
-function colAlign(c){if(!hasHdr)return'';const d=gI(0,c);return d?d.style.textAlign:'';}
+function colAlign(c){if(!hasHdr)return'';const d=gCI(0,c);return d?d.style.textAlign:'';}
 function mdAlignRow(w){return'| '+w.map((n,c)=>{const a=colAlign(c);if(a==='center')return':'+'-'.repeat(Math.max(1,n-2))+':';if(a==='right')return'-'.repeat(Math.max(1,n-1))+':';return'-'.repeat(n);}).join(' | ')+' |';}
 function buildMD(){const d=getRows();if(!d.length)return'';const w=d[0].map((_,c)=>Math.max(...d.map(r=>(r[c]||'').length),3));const lines=d.map(r=>'| '+r.map((v,c2)=>v.padEnd(w[c2])).join(' | ')+' |');lines.splice(1,0,mdAlignRow(w));return lines.join('\n');}
-function buildHTML(){let h='<table>\n';for(let r=0;r<tbl.rows.length;r++){h+='  <tr>';for(let c=0;c<tbl.rows[r].cells.length;c++){const d=gI(r,c);const tag=(r===0&&hasHdr)?'th':'td';h+=`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`;}h+='</tr>\n';}return h+'</table>';}
+function buildHTML(){let h='<table>\n';for(let r=0;r<NR;r++){h+='  <tr>';for(let c=0;c<NC;c++){const d=gCI(r,c);const tag=(r===0&&hasHdr)?'th':'td';h+=`<${tag}${csa(d)}>${d?d.innerHTML:''}</${tag}>`;}h+='</tr>\n';}return h+'</table>';}
 function doExport(type){
   const d=getRows();let content='',filename='',mime='text/plain';
   if(type==='csv'){content=d.map(r=>r.map(escCSV).join(',')).join('\n');filename='table.csv';mime='text/csv';}
@@ -441,17 +626,28 @@ function doExport(type){
   else if(type==='tsv'){content=d.map(r=>r.join('\t')).join('\n');filename='table.tsv';}
   else if(type==='cells'){
     const tsv=d.map(r=>r.join('\t')).join('\n');
-    const ho='<table>'+d.map((r,ri)=>'<tr>'+r.map((v,ci2)=>{const tag=(ri===0&&hasHdr)?'th':'td';return`<${tag}${csa(gI(ri,ci2))}>${v}</${tag}>`;}).join('')+'</tr>').join('')+'</table>';
-    navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob([ho],{type:'text/html'})})]).then(()=>toast('Copied as cells')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));
-    return;
+    const ho='<table>'+d.map((r,ri)=>'<tr>'+r.map((v,ci2)=>{const tag=(ri===0&&hasHdr)?'th':'td';return`<${tag}${csa(gCI(ri,ci2))}>${v}</${tag}>`;}).join('')+'</tr>').join('')+'</table>';
+    navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob([ho],{type:'text/html'})})]).then(()=>toast('Copied as cells')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));return;
   }
   if(copyMode){navigator.clipboard.writeText(content).then(()=>toast('Copied')).catch(()=>toast('Failed'));}
   else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=filename;a.click();toast('Downloaded '+filename);}
 }
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
 
-build();
-const starter=[['Name','Department','Role','Start date'],['Alice Chen','Engineering','Lead dev','2021-03'],['Bjorn Hansen','Design','Senior UX','2020-11'],['Mia Okafor','Product','PM','2022-06']];
-for(let r=0;r<NR;r++)for(let c=0;c<NC;c++){const d=gI(r,c);if(d&&starter[r]&&starter[r][c])d.innerText=starter[r][c];}
-[0,1,2,3].forEach(c=>{const d=gI(0,c);if(d)d.style.fontWeight='bold';});
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function init(){
+  const saved=loadSaved();
+  if(saved){
+    NR=saved.NR||4;NC=saved.NC||4;
+    hasHdr=saved.hasHdr!==undefined?saved.hasHdr:true;
+    fitMode=saved.fitMode!==undefined?saved.fitMode:true;
+    build(true);
+    if(saved.cells)applySnap(saved.cells,true);
+    toast('Restored saved table');
+  } else {
+    build(true);
+  }
+})();
 </script>
+</body>
+</html>
