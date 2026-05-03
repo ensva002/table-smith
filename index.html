@@ -33,9 +33,9 @@
     --shadow:rgba(0,0,0,0.45);
   }
 }
-body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:var(--wt);background:var(--bg-page);min-height:100vh;padding:2rem}
-#app{max-width:1100px;margin:0 auto}
-.wrap{padding:14px}
+body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:var(--wt);background:var(--bg-page);height:100dvh;padding:1rem;display:flex;flex-direction:column;overflow:hidden}
+#app{max-width:1100px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column;min-height:0}
+.wrap{padding:14px;flex:1;display:flex;flex-direction:column;min-height:0}
 .sz-num::-webkit-inner-spin-button,.sz-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
 .toolbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px;background:var(--wb2);border:1px solid var(--wb4);border-radius:7px;margin-bottom:10px}
@@ -64,6 +64,10 @@ h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
 .tip{position:absolute;background:var(--wb7);color:var(--bg-page);font-size:11px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;z-index:200;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);transition:opacity .1s .5s;border:1px solid var(--wb5)}
 .tb-btn:hover .tip,.sz-btn:hover .tip,.sw-track:hover .tip{opacity:1}
 #save-indicator{font-size:11px;color:var(--wt3);opacity:0;transition:opacity .4s;margin-left:4px;user-select:none;flex-shrink:0}
+#expand-btn{margin-left:auto;padding:2px 7px;border:1px solid var(--wb4);border-radius:5px;background:var(--wb);color:var(--wt2);cursor:pointer;font-size:12px;font-family:inherit;display:none;flex-shrink:0;line-height:1.4;transition:background .1s}
+#expand-btn:hover{background:var(--wb3)}
+#expand-btn.active{background:var(--wb3);border-color:var(--wb5)}
+body.wide #app{max-width:none}
 #save-indicator.show{opacity:1}
 
 /* align icons — SVG lines */
@@ -94,8 +98,8 @@ h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
 .export-pop-btn .tip{bottom:auto;top:50%;transform:translateY(-50%);left:calc(100% + 6px)}
 
 /* table grid */
-.tbl-outer{overflow:auto;border:1px solid var(--wb4);border-radius:4px;position:relative;max-height:520px}
-.tbl-grid{display:grid;width:100%}
+.tbl-outer{overflow:auto;border-radius:4px;position:relative;flex:1;min-height:0}
+.tbl-grid{display:grid;width:100%;border:1px solid var(--wb4);border-radius:4px;box-sizing:border-box}
 .tbl-grid.endless{width:auto}
 .g-corner{background:var(--bar);border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);position:sticky;top:0;left:0;z-index:4}
 .g-col-hdr{background:var(--bar);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--wt2);cursor:pointer;border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);user-select:none;overflow:hidden;position:sticky;top:0;z-index:3;transition:background .1s}
@@ -106,6 +110,7 @@ h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
 .g-row-hdr.active{background:var(--bar-a);color:var(--wb)}
 .g-cell{border-right:1px solid var(--wb4);border-bottom:1px solid var(--wb4);position:relative;background:var(--wb);min-width:0}
 .g-cell.hdr{background:var(--wb3)}
+.g-cell.hdr .ci{font-weight:600}
 .g-cell.sel{outline:2px solid var(--sel);outline-offset:-2px;z-index:1}
 .g-cell.sel .ci{background:color-mix(in srgb,var(--sel-bg) 25%,transparent)}
 .g-cell.hdr.sel .ci{background:color-mix(in srgb,var(--sel-bg) 25%,transparent)}
@@ -158,11 +163,11 @@ h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
     <div class="sz-row">
     <span>Rows</span>
     <button class="sz-btn" onclick="chgSize('r',-1)">−<span class="tip">Remove last row</span></button>
-    <input id="rn" type="number" min="1" max="99" value="4" onchange="setSize('r',this)" style="width:38px;padding:1px 4px;border:1px solid var(--wb4);border-radius:4px;background:var(--wb);color:var(--wt);font-size:13px;font-family:inherit;text-align:center;-moz-appearance:textfield" class="sz-num">
+    <input id="rn" type="number" min="1" max="99" value="4" onchange="setSize('r',this)" style="width:38px;height:28px;padding:0 4px;border:1px solid var(--wb4);border-radius:4px;background:#fff;color:#000;font-size:13px;font-family:inherit;text-align:center;-moz-appearance:textfield" class="sz-num">
     <button class="sz-btn" onclick="chgSize('r',1)">+<span class="tip">Add row</span></button>
     <span style="margin-left:4px">Columns</span>
     <button class="sz-btn" onclick="chgSize('c',-1)">−<span class="tip">Remove last column</span></button>
-    <input id="cn" type="number" min="1" max="99" value="4" onchange="setSize('c',this)" style="width:38px;padding:1px 4px;border:1px solid var(--wb4);border-radius:4px;background:var(--wb);color:var(--wt);font-size:13px;font-family:inherit;text-align:center;-moz-appearance:textfield" class="sz-num">
+    <input id="cn" type="number" min="1" max="99" value="4" onchange="setSize('c',this)" style="width:38px;height:28px;padding:0 4px;border:1px solid var(--wb4);border-radius:4px;background:#fff;color:#000;font-size:13px;font-family:inherit;text-align:center;-moz-appearance:textfield" class="sz-num">
     <button class="sz-btn" onclick="chgSize('c',1)">+<span class="tip">Add column</span></button>
     <div class="sz-sep"></div>
     <div class="flex-break"></div>
@@ -172,6 +177,9 @@ h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
     <div class="sz-sep"></div>
     <button class="sz-btn" id="undo-btn" onclick="doUndo()" disabled title="">↩ Undo<span class="tip">Undo last action (Ctrl+Z)</span></button>
     <span id="save-indicator">Saved ✓</span>
+    <button id="expand-btn" onclick="toggleWide()" title="Toggle wide mode">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block"><path d="M1 4.5V1.5A.5.5 0 0 1 1.5 1H4.5M8.5 1H11.5A.5.5 0 0 1 12 1.5V4.5M12 8.5V11.5A.5.5 0 0 1 11.5 12H8.5M4.5 12H1.5A.5.5 0 0 1 1 11.5V8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
   <div class="toolbar">
     <!-- Bold -->
@@ -256,7 +264,7 @@ h1{font-size:18px;font-weight:600;color:var(--wt2);margin-bottom:14px}
   <div class="tbl-outer" id="tbl-outer">
     <div class="tbl-grid" id="tbl-grid"></div>
   </div>
-</div></div>
+</div></div></div>
 
 <div class="overlay" id="overlay">
   <div class="dialog">
@@ -466,6 +474,26 @@ function markTabAnchor(r,c){
   grid.querySelectorAll('.tab-anchor').forEach(el=>el.classList.remove('tab-anchor'));
   if(r!==null&&c!==null){const cell=gCell(r,c);if(cell)cell.classList.add('tab-anchor');}
 }
+let wideMode=false;
+
+function toggleWide(){
+  wideMode=!wideMode;
+  document.body.classList.toggle('wide',wideMode);
+  document.getElementById('expand-btn').classList.toggle('active',wideMode);
+}
+
+function checkExpandBtn(){
+  const btn=document.getElementById('expand-btn');
+  if(!btn)return;
+  // Show if the window is wider than the app's natural max-width
+  const appW=document.getElementById('app').offsetWidth;
+  const winW=window.innerWidth;
+  // Show when not in wide mode and window > app, or always show when in wide mode
+  btn.style.display=(wideMode||winW>appW+40)?'block':'none';
+}
+
+window.addEventListener('resize',checkExpandBtn);
+
 function updateUndoBtn(){
   const btn=document.getElementById('undo-btn');
   if(!btn)return;
@@ -473,11 +501,11 @@ function updateUndoBtn(){
 }
 
 function updateExportLabels(){
-  const multi=sel.size>1;
+  const isSel=sel.size>1&&isRectSel();
   const eb=document.getElementById('export-btn');
   const cb=document.getElementById('copy-btn');
-  if(eb)eb.childNodes[0].textContent=multi?'Export selection to…':'Export to…';
-  if(cb)cb.childNodes[0].textContent=multi?'Copy selection as…':'Copy as…';
+  if(eb)eb.childNodes[0].textContent=isSel?'Export selection to…':'Export to…';
+  if(cb)cb.childNodes[0].textContent=isSel?'Copy selection as…':'Copy as…';
 }
 
 function refreshCellBgTints(){
@@ -517,6 +545,7 @@ function setGridTemplate(){
   grid.className=fitMode?'tbl-grid':'tbl-grid endless';
   grid.style.width=fitMode?'100%':(28+NC*140)+'px';
 }
+
 function build(skipSave){
   const prev=snap();grid.innerHTML='';setGridTemplate();
   const corner=document.createElement('div');
@@ -782,10 +811,11 @@ function onCIKey(e){
       const nextRow=tabAnchorRow+1;
       const returnCol=tabAnchorCol!==null?tabAnchorCol:c;
       tabAnchorRow=null;tabAnchorCol=null;markTabAnchor(null,null);
-      if(nextRow<NR)focusCell(nextRow,returnCol);
-      else focusCell(r,returnCol);
+      if(nextRow<NR){focusCell(nextRow,returnCol);}
+      else{doAddRow(NR);focusCell(NR-1,returnCol);}
     } else {
       if(r<NR-1)focusCell(r+1,c);
+      else{doAddRow(NR);focusCell(NR-1,c);}
     }
     return;
   }
@@ -943,7 +973,7 @@ function togHdr(){pushUndo();hasHdr=!hasHdr;grid.querySelectorAll('.g-cell').for
 // ── Export ────────────────────────────────────────────────────────────────────
 function getRows(){const rows=[];for(let r=0;r<NR;r++){const row=[];for(let c=0;c<NC;c++){const d=gCI(r,c);row.push(d?d.innerText.trim():'');}rows.push(row);}return rows;}
 function getExportRows(){
-  if(sel.size<=1)return getRows();
+  if(sel.size<=1||!isRectSel())return getRows();
   const arr=[...sel].map(pk);
   const minR=Math.min(...arr.map(p=>p[0])),maxR=Math.max(...arr.map(p=>p[0]));
   const minC=Math.min(...arr.map(p=>p[1])),maxC=Math.max(...arr.map(p=>p[1]));
@@ -952,7 +982,7 @@ function getExportRows(){
   return rows;
 }
 function getExportBounds(){
-  if(sel.size<=1)return{minR:0,minC:0,maxR:NR-1,maxC:NC-1};
+  if(sel.size<=1||!isRectSel())return{minR:0,minC:0,maxR:NR-1,maxC:NC-1};
   const arr=[...sel].map(pk);
   return{minR:Math.min(...arr.map(p=>p[0])),maxR:Math.max(...arr.map(p=>p[0])),minC:Math.min(...arr.map(p=>p[1])),maxC:Math.max(...arr.map(p=>p[1]))};
 }
@@ -1014,6 +1044,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
   // Seed the undo stack with the initial state
   undoStack=[{NR,NC,hasHdr,fitMode,cells:snap()}];undoPointer=0;updateUndoBtn();
   refreshCellBgTints();
+  checkExpandBtn();
 })();
 </script>
 </body>
