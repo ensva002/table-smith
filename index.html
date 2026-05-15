@@ -259,6 +259,7 @@ body.wide #app{max-width:none}
       <button class="export-pop-btn" onclick="doExport('tsv');closeExportPop()">TSV<span class="tip">Tab-separated values</span></button>
       <button class="export-pop-btn" onclick="doExport('md');closeExportPop()">Markdown<span class="tip">Markdown table with alignment</span></button>
       <button class="export-pop-btn" onclick="doExport('html');closeExportPop()">HTML<span class="tip">HTML table with styles and colours</span></button>
+      <button class="export-pop-btn" onclick="doExport('pdf');closeExportPop()">PDF<span class="tip">PDF with styling, header and colours</span></button>
     </div>
   </div>
   <div class="tbl-outer" id="tbl-outer">
@@ -282,10 +283,10 @@ body.wide #app{max-width:none}
 
 <script>
 const SAVE_KEY='table_builder_v2';
-const UNDO_LIMIT=50;
-let undoStack=[];   // array of {NR,NC,hasHdr,fitMode,cells} snapshots
-let undoPointer=-1; // points to current position in stack
-let undoPaused=false; // prevents recording while restoring
+const UNDO_LIMIT=80;
+let undoStack=[];
+let undoPointer=-1;
+let undoPaused=false;
 let NR=4,NC=4,hasHdr=true,fitMode=true;
 let sel=new Set(),lastSel=null,selAnchor=null,selLive=null;
 let tabAnchorRow=null,tabAnchorCol=null; // row/col where tabbing started — Enter returns here
@@ -397,6 +398,7 @@ function copyAs(type){
     let h='<table>\n';
     for(let r=bounds.minR;r<=bounds.maxR;r++){h+='  <tr>';for(let c=bounds.minC;c<=bounds.maxC;c++){const dEl=gCI(r,c);const cEl=gCell(r,c);const tag=(r===0&&hasHdr&&bounds.minR===0)?'th':'td';h+=`<${tag}${csaFull(dEl,cEl)}>${dEl?dEl.innerHTML:''}</${tag}>`;}h+='</tr>\n';}
     content=h+'</table>';}
+  else if(type==='pdf'){exportPDF();return;}
   else if(type==='tsv'){content=d.map(r=>r.join('\t')).join('\n');}
   else if(type==='cells'){
     const tsv=d.map(r=>r.join('\t')).join('\n');
@@ -459,6 +461,12 @@ function doUndo(){
   restoreSnapshot(undoStack[undoPointer]);
 }
 
+function doRedo(){
+  if(undoPointer>=undoStack.length-1)return;
+  undoPointer++;
+  restoreSnapshot(undoStack[undoPointer]);
+}
+
 function restoreSnapshot(s){
   undoPaused=true;
   NR=s.NR;NC=s.NC;hasHdr=s.hasHdr;fitMode=s.fitMode;
@@ -496,8 +504,9 @@ window.addEventListener('resize',checkExpandBtn);
 
 function updateUndoBtn(){
   const btn=document.getElementById('undo-btn');
-  if(!btn)return;
-  btn.disabled=undoPointer<=0;
+  if(btn)btn.disabled=undoPointer<=0;
+  const rbtn=document.getElementById('redo-btn');
+  if(rbtn)rbtn.disabled=undoPointer>=undoStack.length-1;
 }
 
 function updateExportLabels(){
@@ -576,10 +585,10 @@ function build(skipSave){
       d.addEventListener('mousedown',onCIDown);d.addEventListener('mouseover',onCIOver);
       d.addEventListener('keydown',onCIKey);d.addEventListener('copy',onCICopy);
       d.addEventListener('focus',()=>cellEditing.set(d,false));
-      d.addEventListener('input',()=>{
-      if(!cellEditing.get(d)){pushUndo();}
-      cellEditing.set(d,true);scheduleSave();
-    });
+      d.addEventListener('input',()=>{cellEditing.set(d,true);scheduleSave();});
+      d.addEventListener('blur',()=>{
+        if(cellEditing.get(d)){pushUndo();cellEditing.set(d,false);}
+      });
       const handle=document.createElement('div');handle.className='handle';
       handle.innerHTML='<span></span><span></span><span></span>';
       handle.addEventListener('mousedown',onHandleDown);
@@ -743,7 +752,10 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closePop();closeDialog();closeColorPop();closeExportPop();closeCopyPop();}
-  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&document.activeElement.className!=='ci'){e.preventDefault();doUndo();}
+  if((e.ctrlKey||e.metaKey)&&document.activeElement.className!=='ci'){
+    if(e.key==='z'){e.preventDefault();doUndo();}
+    else if(e.key==='y'||(e.key==='z'&&e.shiftKey)){e.preventDefault();doRedo();}
+  }
 });
 
 // ── Selection ─────────────────────────────────────────────────────────────────
@@ -798,7 +810,8 @@ function onCIKey(e){
     if(e.key==='ArrowRight'){e.preventDefault();if(e.shiftKey&&c<NC-1){if(!selAnchor)selAnchor=[r,c];if(!selLive)selLive=[r,c];selLive=[selLive[0],selLive[1]+1];selLive[0]=Math.max(0,Math.min(NR-1,selLive[0]));selLive[1]=Math.max(0,Math.min(NC-1,selLive[1]));sel.clear();selRange(selAnchor[0],selAnchor[1],selLive[0],selLive[1]);const d2=gCI(selLive[0],selLive[1]);if(d2)d2.focus();}else if(c<NC-1)focusCell(r,c+1);return;}
     if(e.key==='Delete'){e.preventDefault();pushUndo();sel.forEach(k=>{const[r2,c2]=pk(k);const d2=gCI(r2,c2);if(d2)d2.innerHTML='';});scheduleSave();return;}
     if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelection();return;}
-    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();doUndo();return;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){if(!editing){e.preventDefault();doUndo();}return;}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){if(!editing){e.preventDefault();doRedo();}return;}
     if((e.ctrlKey||e.metaKey)&&e.key==='b'){e.preventDefault();applyFmt('bold');return;}
     if((e.ctrlKey||e.metaKey)&&e.key==='i'){e.preventDefault();applyFmt('italic');return;}
     if(!e.ctrlKey&&!e.metaKey&&(e.key.length<=1||e.key==='Backspace'||e.key==='Enter')){e.preventDefault();}
@@ -828,7 +841,8 @@ function onCIKey(e){
   if((e.ctrlKey||e.metaKey)&&e.key==='b'){e.preventDefault();applyFmt('bold');return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='i'){e.preventDefault();applyFmt('italic');return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelection();return;}
-  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();doUndo();return;}
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){if(!editing){e.preventDefault();doUndo();}return;}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){if(!editing){e.preventDefault();doRedo();}return;}
   if(e.key.length===1&&!e.ctrlKey&&!e.metaKey)cellEditing.set(d,true);
 }
 function onCICopy(e){if(sel.size!==1)return;e.preventDefault();e.clipboardData.setData('text/plain',window.getSelection().toString());}
@@ -963,9 +977,24 @@ function onDragUp(){
 
 // ── Format & toggles ──────────────────────────────────────────────────────────
 function applyFmt(cmd){
-  pushUndo();
-  if(sel.size>=1){sel.forEach(k=>{const[r,c]=pk(k);const d=gCI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});scheduleSave();}
-  else document.execCommand(cmd);
+  const s=window.getSelection();
+  // Only count as "text selection" if it's actually inside a cell
+  const selInCell=s&&s.rangeCount>0&&!s.getRangeAt(0).collapsed&&s.getRangeAt(0).commonAncestorContainer.closest&&s.getRangeAt(0).commonAncestorContainer.closest('.g-cell');
+  const selNode=s&&s.rangeCount>0?s.getRangeAt(0).commonAncestorContainer:null;
+  const inCell=selNode&&(selNode.nodeType===3?selNode.parentElement:selNode).closest('.g-cell');
+  if(inCell&&s&&!s.getRangeAt(0).collapsed){
+    // Partial text selected inside a cell — use execCommand for inline formatting
+    pushUndo();
+    document.execCommand(cmd==='bold'?'bold':'italic');
+    scheduleSave();
+  } else if(sel.size>=1){
+    // Whole cell(s) selected — toggle cell-level style
+    pushUndo();
+    sel.forEach(k=>{const[r,c]=pk(k);const d=gCI(r,c);if(!d)return;if(cmd==='bold')d.style.fontWeight=d.style.fontWeight==='bold'?'':'bold';if(cmd==='italic')d.style.fontStyle=d.style.fontStyle==='italic'?'':'italic';});
+    scheduleSave();
+  } else {
+    document.execCommand(cmd==='bold'?'bold':'italic');
+  }
 }
 function applyAlign(a){pushUndo();sel.forEach(k=>{const[r,c]=pk(k);const d=gCI(r,c);if(d)d.style.textAlign=a;});scheduleSave();}
 function togHdr(){pushUndo();hasHdr=!hasHdr;grid.querySelectorAll('.g-cell').forEach(cell=>{if(+cell.dataset.r===0)cell.classList.toggle('hdr',hasHdr);});document.getElementById('sw-hdr').classList.toggle('on',hasHdr);scheduleSave();}
@@ -990,6 +1019,50 @@ function escCSV(v){return/[,"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 function colAlign(c){if(!hasHdr)return'';const d=gCI(0,c);return d?d.style.textAlign:'';}
 function mdAlignRow(w){return'| '+w.map((n,c)=>{const a=colAlign(c);if(a==='center')return':'+'-'.repeat(Math.max(1,n-2))+':';if(a==='right')return'-'.repeat(Math.max(1,n-1))+':';return'-'.repeat(n);}).join(' | ')+' |';}
 function buildMD(){const d=getRows();if(!d.length)return'';const w=d[0].map((_,c)=>Math.max(...d.map(r=>(r[c]||'').length),3));const lines=d.map(r=>'| '+r.map((v,c2)=>v.padEnd(w[c2])).join(' | ')+' |');lines.splice(1,0,mdAlignRow(w));return lines.join('\n');}
+function exportPDF(){
+  const bounds=getExportBounds();
+  let rows='';
+  for(let r=bounds.minR;r<=bounds.maxR;r++){
+    rows+='<tr>';
+    for(let co=bounds.minC;co<=bounds.maxC;co++){
+      const d=gCI(r,co);const cell=gCell(r,co);
+      const isHdr=(r===0&&hasHdr&&bounds.minR===0);
+      const tag=isHdr?'th':'td';
+      const styles=[];
+      if(cell&&cell.dataset.cellColor){styles.push('background:'+lightenHex(cell.dataset.cellColor));}
+      else if(isHdr){styles.push('background:#e8e8e8');}
+      if(d&&d.style.color)styles.push('color:'+d.style.color);
+      if(d&&d.style.textAlign)styles.push('text-align:'+d.style.textAlign);
+      if(isHdr||(d&&d.style.fontWeight==='bold'))styles.push('font-weight:bold');
+      if(d&&d.style.fontStyle==='italic')styles.push('font-style:italic');
+      const styleAttr=styles.length?' style="'+styles.join(';')+'"':'';
+      rows+=`<${tag}${styleAttr}>${d?d.innerHTML:''}</${tag}>`;
+    }
+    rows+='</tr>';
+  }
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Table</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{font-family:system-ui,-apple-system,sans-serif;font-size:13px;color:#111;padding:24px}'
+    +'table{border-collapse:collapse;width:100%}'
+    +'td,th{border:1px solid #bbb;padding:6px 10px;vertical-align:top;word-break:break-word}'
+    +'th{font-weight:600}'
+    +'@media print{body{padding:0}@page{margin:1.5cm}}</style>'
+    +'</head><body><table>'+rows+'</table>'
+    +'<script>window.addEventListener("load",function(){window.print();})<'
+    +'/script></body></html>';
+  // Open in new tab using blob URL
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.target='_blank';
+  a.rel='noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+
 function buildHTML(){
   let h='<table>\n';
   for(let r=0;r<NR;r++){
@@ -1024,6 +1097,7 @@ function doExport(type){
     const ho='<table>'+d.map((r,ri)=>'<tr>'+r.map((v,ci2)=>{const tag=(ri===0&&hasHdr)?'th':'td';const dEl=gCI(ri,ci2);const cEl=gCell(ri,ci2);return`<${tag}${csaFull(dEl,cEl)}>${v}</${tag}>`;}).join('')+'</tr>').join('')+'</table>';
     navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([tsv],{type:'text/plain'}),'text/html':new Blob([ho],{type:'text/html'})})]).then(()=>toast('Copied as cells')).catch(()=>navigator.clipboard.writeText(tsv).then(()=>toast('Copied')));return;
   }
+  if(!filename)return;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=filename;a.click();toast('Downloaded '+filename);
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
